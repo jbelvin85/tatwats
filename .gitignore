@@ -27,3 +27,6 @@ wizard.log
 *.ntvs*
 *.njsproj
 *.sln
+
+# Environment variables
+.env

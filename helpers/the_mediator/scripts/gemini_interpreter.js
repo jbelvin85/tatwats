@@ -1,13 +1,13 @@
+require('dotenv').config();
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fs = require('fs');
 const path = require('path');
 
-// IMPORTANT: Replace with your actual Gemini API Key
-const API_KEY = process.env.GEMINI_API_KEY; 
+const API_KEY = process.env.GEMINI_API_KEY;
 
-if (!API_KEY) {
-  console.error('GEMINI_API_KEY environment variable is not set.');
-  console.error('Please set it before running the interpreter.');
+if (!API_KEY || API_KEY === "YOUR_API_KEY_HERE") {
+  console.error('GEMINI_API_KEY environment variable is not set or is still the placeholder value.');
+  console.error('Please create a .env file in the scripts directory and set your GEMINI_API_KEY.');
   process.exit(1);
 }
 

@@ -9,11 +9,11 @@ We have successfully set up a multi-component system for helper communication, i
     *   Create a new project or select an existing one.
     *   Enable the "Generative Language API" (or "Gemini API" if it's named differently).
     *   Go to "APIs & Services" -> "Credentials" and create an API key.
-*   **Environment Variable**: Set your Gemini API key as an environment variable named `GEMINI_API_KEY` in your terminal session before starting the `message_listener.js` script.
-    ```bash
-    export GEMINI_API_KEY="YOUR_API_KEY_HERE"
+*   **Create `.env` file**: In the `helpers/the_mediator/scripts` directory, you will find a file named `.env`. Open this file and replace `"YOUR_API_KEY_HERE"` with your actual Gemini API key. The file should look like this:
     ```
-    (Replace `YOUR_API_KEY_HERE` with your actual key).
+    GEMINI_API_KEY="xxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    ```
+    This file is included in `.gitignore` and will not be committed to your repository.
 
 ### 2. Start the Backend Server:
 
@@ -59,11 +59,15 @@ This script watches for new messages and uses the Gemini interpreter to generate
     ```bash
     cd /home/user/Github/tatwats/helpers/the_mediator/scripts
     ```
-*   **Important**: Ensure your `GEMINI_API_KEY` environment variable is set in this terminal session.
-*   Run the listener:
-    ```bash
-    node message_listener.js
-    ```
+*   Run the appropriate start script for your operating system:
+    *   **Windows**:
+        ```bash
+        start-listener.bat
+        ```
+    *   **macOS / Linux**:
+        ```bash
+        ./start-listener.sh
+        ```
     You should see `Message listener started. Waiting for new messages...` in your terminal. Keep this terminal open.
 
 ### 5. Test the Communication:
@@ -77,9 +81,9 @@ This script watches for new messages and uses the Gemini interpreter to generate
 
 *   **`helpers/the_mediator/the.MEDIATOR.md`**: Documentation for the communication system.
 *   **`helpers/the_mediator/common_room/`**: The shared message space with inboxes for each helper.
-*   **`helpers/the_mediator/scripts/send_message.sh`**: CLI script to send messages.
-*   **`helpers/the_mediator/scripts/check_messages.sh`**: CLI script to check messages.
-*   **`helpers/the_mediator/scripts/read_message.sh`**: CLI script to read message content.
+*   **`helpers/the_mediator/scripts/send_message.js`**: Node.js script to send messages. Usage: `node send_message.js <sender> <recipient> "<message>"`
+*   **`helpers/the_mediator/scripts/check_messages.js`**: Node.js script to check messages. Usage: `node check_messages.js <recipient>`
+*   **`helpers/the_mediator/scripts/read_message.js`**: Node.js script to read message content. Usage: `node read_message.js <recipient> <message_id>`
 *   **`helpers/the_mediator/scripts/gemini_interpreter.js`**: Node.js script that interfaces with the Gemini API to generate helper responses based on their personas.
 *   **`helpers/the_mediator/scripts/message_listener.js`**: Node.js script that watches for new messages, triggers the interpreter, and manages message flow.
 *   **`webapp/server/`**: Node.js Express backend providing API endpoints for the frontend.
