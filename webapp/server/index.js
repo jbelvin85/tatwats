@@ -112,6 +112,60 @@ app.post('/api/helpers/:recipient/messages', (req, res) => {
   });
 });
 
+// Endpoint to add a new helper
+app.post('/api/helpers', (req, res) => {
+  const { name } = req.body;
+  if (!name) {
+    return res.status(400).json({ error: 'Helper name is required' });
+  }
+
+  const helperDir = path.join(commonRoomDir, name);
+  const inboxDir = path.join(helperDir, 'inbox');
+
+  fs.mkdir(inboxDir, { recursive: true }, (err) => {
+    if (err) {
+      console.error(`Error creating helper directory for ${name}:`, err);
+      return res.status(500).json({ error: 'Failed to add helper' });
+    }
+    res.status(201).json({ message: `Helper ${name} added successfully` });
+  });
+});
+
+// Endpoint to remove a helper
+app.delete('/api/helpers/:name', (req, res) => {
+  const helperName = req.params.name;
+  const helperDir = path.join(commonRoomDir, helperName);
+
+  fs.rm(helperDir, { recursive: true, force: true }, (err) => {
+    if (err) {
+      console.error(`Error removing helper directory for ${helperName}:`, err);
+      return res.status(500).json({ error: 'Failed to remove helper' });
+    }
+    res.json({ message: `Helper ${helperName} removed successfully` });
+  });
+});
+
+// Endpoint to edit (rename) a helper
+app.put('/api/helpers/:oldName/:newName', (req, res) => {
+  const oldName = req.params.oldName;
+  const newName = req.params.newName;
+
+  if (!newName) {
+    return res.status(400).json({ error: 'New helper name is required' });
+  }
+
+  const oldHelperDir = path.join(commonRoomDir, oldName);
+  const newHelperDir = path.join(commonRoomDir, newName);
+
+  fs.rename(oldHelperDir, newHelperDir, (err) => {
+    if (err) {
+      console.error(`Error renaming helper directory from ${oldName} to ${newName}:`, err);
+      return res.status(500).json({ error: 'Failed to rename helper' });
+    }
+    res.json({ message: `Helper ${oldName} renamed to ${newName} successfully` });
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

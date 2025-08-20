@@ -5,15 +5,13 @@ const { exec } = require('child_process');
 const { getHelperResponse } = require('./gemini_interpreter');
 
 const commonRoomDir = path.join(__dirname, '../common_room');
-const send_message_script = path.join(__dirname, './send_message.sh');
+const send_message_script = path.join(__dirname, './send_message.js');
 
 console.log(`Watching for new messages in: ${commonRoomDir}`);
 
 // Initialize watcher
 const watcher = chokidar.watch(`${commonRoomDir}/*/inbox/*.json`, {
-  ignored: /(^|\/)\.|
-/processed
-// ignore dotfiles and processed directory
+  ignored: /(^|\/)\.|\/processed/, // ignore dotfiles and processed directory
   persistent: true,
   ignoreInitial: true // Don't trigger on files already present when starting
 });
