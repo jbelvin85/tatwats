@@ -1,54 +1,59 @@
-# 🧩 Preproduction Best Practices for TATWATS (using PodTracker as an example)
+# TATWATS Development Roadmap
 
-Before writing a single line of code, we must prepare the battlefield.  
-This **preproduction phase** ensures our goals are clear, our stack is stable, and our project flows smoothly once we begin coding.  
-
----
-
-## 1. Define the Vision (Your Win Condition)
-- **Project Goals:** Why does this app exist?  
-- **Target Audience:** Who will use it (competitive vs casual MTG players)?  
-- **Scope:** Decide what *not* to build at first (focus on MVP).  
-- **Core Use Cases:** Write user stories (e.g., “As a user, I want to create a pod, invite friends, and record a match result”).  
-
-> *MTG Analogy:* Choose your **win condition** before building your deck.  
+This document outlines the planned architectural and feature enhancements for the TATWATS framework. It is a living document that will be updated as the project evolves.
 
 ---
 
-## 2. Outline Core Features (Your Core 60 Cards)
-- **Must-have (MVP):**
-  - User accounts  
-  - Deck management  
-  - Pod creation & chat  
-  - Game result logging  
-- **Nice-to-have (future expansions):**
-  - Notifications  
-  - Stats & analytics  
-  - Tournaments  
-  - Integrations with MTG APIs  
+## Phase 0: Foundational System Setup
 
-> *MTG Analogy:* Every deck has **core spells** and **flex slots**.  
+This phase focuses on establishing the core environment and security practices for the TATWATS project.
+
+### Epic 0.1: Credential Management and Security Hardening
+
+*   **Objective:** Ensure secure and verifiable management of all system and application credentials.
+*   **Tasks:**
+    1.  **Credential Verification and Configuration:** Implement a clear process for users to verify and configure PostgreSQL and application-level credentials, ensuring they are correctly set up in the `.env` file and correspond to active, properly permissioned accounts.
 
 ---
 
-## 3. Choose the Tech Stack (Your Mana Base)
-- **Frontend:** React + TailwindCSS + PWA setup  
-- **Backend:** Node.js + Prisma (with Express or similar)  
-- **Database:** PostgreSQL  
-- **Infrastructure:** Docker for development/production parity  
-- **Hosting:** Cloud/VPS/container host (to be decided)  
-- **Realtime Support:** Socket.IO / Supabase (for chat & live pods)  
+## Phase 1: Real-time Infrastructure Foundation
 
-> *MTG Analogy:* The **mana base** must reliably sup
+This phase focuses on upgrading the core infrastructure to be more robust, scalable, and efficient, providing a real-time experience for the user.
+
+### Epic 1.1: Database-Driven Message Bus
+*   **Objective:** Replace the current file-based messaging system with a transactional, database-driven approach.
+*   **Tasks:**
+    1.  **Schema Design:** Design and finalize the schemas for `conversations` and `messages` tables in PostgreSQL.
+    2.  **Database Migration:** Create a script to migrate any existing messages from the file system to the new database tables.
+    3.  **Backend Refactoring:** Update the backend API and helper communication logic to use the database for all message read/write operations.
+    4.  **Frontend Refactoring:** Update the `ChatMonitor` component to fetch messages from the new database-backed API endpoints.
+    5.  **Cleanup:** Decommission and remove the old file-based `common_room` message directory.
+
+### Epic 1.2: Real-time UI Layer
+*   **Objective:** Eliminate polling by implementing a WebSocket layer for instant client-server communication.
+*   **Tasks:**
+    1.  **Dependency Integration:** Add and configure `socket.io` (or a similar library) on both the backend server and the React frontend.
+    2.  **Backend Implementation:** Create a WebSocket service that emits events when key actions occur (e.g., `process_status_changed`, `new_message_received`).
+    3.  **Frontend Refactoring (`Dashboard`):** Modify the `Dashboard.js` component to listen for `process_status_changed` events and update the UI in real-time, removing the 5-second polling interval.
+    4.  **Frontend Refactoring (`ChatMonitor`):** Modify the `ChatMonitor.js` component to listen for `new_message_received` events and append new messages instantly, removing its polling interval.
 
 ---
 
-## 4. Administrative & Monitoring UIs (Your Control Panel)
-These UIs are crucial for maintaining, monitoring, and understanding the TATWATS framework and the example PodTracker application. They provide the necessary visibility and control for system architects and operators.
+## Phase 2: Core Framework Functionality
 
--   **System Overview & Health Dashboard:** A high-level view of the entire system's operational status, including overall health indicators, active helper statuses, and key performance metrics (e.g., uptime, error rates).
--   **Helper Management & Configuration:** A dedicated interface to view and modify the operational parameters of each individual helper (e.g., `the_archivist`, `the_author`), including their status, version, and configurable settings.
--   **Message Flow & Communication Monitor:** Visualizations and logs detailing the real-time and historical message exchanges between helpers, particularly through `the_mediator`, to identify bottlenecks or communication failures.
--   **Task & Workflow Monitor:** A page to track the progress and status of various tasks or workflows initiated within the system, showing which helpers are involved and their current state.
--   **Audit Log & Activity Feed:** A comprehensive, searchable log of all significant system events and actions, crucial for security, debugging, and understanding system behavior over time.
+This phase focuses on building the essential features that define TATWATS as a meta-framework for procedurally generating PWA projects.
 
+### Epic 2.1: Project Scaffolding Engine
+*   **Objective:** Create the systems necessary for users to define, create, and manage new PWA projects via the TATWATS UI.
+*   **Tasks:**
+    1.  **Schema Design:** Design and implement a `projects` table in the database to store metadata for each user-created application.
+    2.  **API Development:** Build the backend CRUD API endpoints for managing projects.
+    3.  **UI Development:** Create a new "Projects" frontend module to provide a user interface for creating, viewing, and managing projects.
+    4.  **Helper Empowerment:** Grant a designated helper (e.g., The Author) the capability to execute sandboxed shell commands necessary for scaffolding a new project (e.g., `npx create-react-app`).
+
+### Epic 2.2: Helper Process Sandboxing (Research & PoC)
+*   **Objective:** Enhance framework security and stability by investigating methods to isolate helper processes from the core system.
+*   **Tasks:**
+    1.  **Research:** Conduct a formal investigation into using Docker or similar containerization technologies to sandbox Node.js child processes.
+    2.  **Proof of Concept (PoC):** Develop a small-scale proof of concept demonstrating the ability of the main backend server to start, stop, and communicate with a single helper running inside a dedicated Docker container.
+    3.  **Documentation:** Record the findings, trade-offs, and a detailed implementation proposal in a new `docs/DECISIONS.md` document.
