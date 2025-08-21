@@ -5,6 +5,8 @@ function HelperAdmin() {
   const [newHelperName, setNewHelperName] = useState('');
   const [editingHelper, setEditingHelper] = useState(null);
   const [editedHelperName, setEditedHelperName] = useState('');
+  const [loading, setLoading] = useState(true); // New loading state
+  const [error, setError] = useState(null);     // New error state
 
   useEffect(() => {
     fetchHelpers();
@@ -12,7 +14,9 @@ function HelperAdmin() {
 
   const fetchHelpers = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/helpers');
+      setLoading(true); // Set loading to true before fetch
+      setError(null);   // Clear any previous errors
+      const response = await fetch('/api/helpers'); // Use relative path due to proxy
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -20,6 +24,9 @@ function HelperAdmin() {
       setHelpers(data);
     } catch (error) {
       console.error("Error fetching helpers:", error);
+      setError("Failed to load helpers. Please check the server and your network connection."); // Set user-friendly error message
+    } finally {
+      setLoading(false); // Set loading to false after fetch (success or failure)
     }
   };
 
@@ -28,7 +35,7 @@ function HelperAdmin() {
     if (!newHelperName.trim()) return;
 
     try {
-      const response = await fetch('http://localhost:3001/api/helpers', {
+      const response = await fetch('/api/helpers', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -47,7 +54,7 @@ function HelperAdmin() {
 
   const handleDeleteHelper = async (helperName) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/helpers/${helperName}`, {
+      const response = await fetch(`/api/helpers/${helperName}`, {
         method: 'DELETE',
       });
       if (!response.ok) {
@@ -71,7 +78,7 @@ function HelperAdmin() {
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/api/helpers/${originalName}/${editedHelperName}`, {
+      const response = await fetch(`/api/helpers/${originalName}/${editedHelperName}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -91,39 +98,50 @@ function HelperAdmin() {
     <div className="helper-admin-container">
       <h2>Helper Administration</h2>
 
-      <form onSubmit={handleAddHelper} className="add-helper-form">
-        <input
-          type="text"
-          placeholder="New Helper Name"
-          value={newHelperName}
-          onChange={(e) => setNewHelperName(e.target.value)}
-        />
-        <button type="submit">Add Helper</button>
-      </form>
+      {loading && <p>Loading helpers...</p>}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
 
-      <ul className="helper-list">
-        {helpers.map((helper) => (
-          <li key={helper} className="helper-item">
-            {editingHelper === helper ? (
-              <>
-                <input
-                  type="text"
-                  value={editedHelperName}
-                  onChange={(e) => setEditedHelperName(e.target.value)}
-                />
-                <button onClick={() => handleSaveEdit(helper)}>Save</button>
-                <button onClick={() => setEditingHelper(null)}>Cancel</button>
-              </>
+      {!loading && !error && (
+        <>
+          <form onSubmit={handleAddHelper} className="add-helper-form">
+            <input
+              type="text"
+              placeholder="New Helper Name"
+              value={newHelperName}
+              onChange={(e) => setNewHelperName(e.target.value)}
+            />
+            <button type="submit">Add Helper</button>
+          </form>
+
+          <ul className="helper-list">
+            {helpers.length === 0 ? (
+              <p>No helpers found. Add one above!</p>
             ) : (
-              <>
-                <span>{helper}</span>
-                <button onClick={() => handleEditClick(helper)}>Edit</button>
-                <button onClick={() => handleDeleteHelper(helper)}>Delete</button>
-              </>
+              helpers.map((helper) => (
+                <li key={helper} className="helper-item">
+                  {editingHelper === helper ? (
+                    <>
+                      <input
+                        type="text"
+                        value={editedHelperName}
+                        onChange={(e) => setEditedHelperName(e.target.value)}
+                      />
+                      <button onClick={() => handleSaveEdit(helper)}>Save</button>
+                      <button onClick={() => setEditingHelper(null)}>Cancel</button>
+                    </>
+                  ) : (
+                    <>
+                      <span>{helper}</span>
+                      <button onClick={() => handleEditClick(helper)}>Edit</button>
+                      <button onClick={() => handleDeleteHelper(helper)}>Delete</button>
+                    </>
+                  )}
+                </li>
+              ))
             )}
-          </li>
-        ))}
-      </ul>
+          </ul>
+        </>
+      )}
     </div>
   );
 }

@@ -1,24 +1,11 @@
 @echo off
-echo Starting all TATWATS components...
 
-REM Start the Backend Server in a new window
-echo.
+REM Start the server
+echo Starting Tatwats Server...
+start "Tatwats Server" cmd /k "cd webapp\server && set PORT=3001 && npm start"
 
-echo Starting Backend Server...
-start cmd /k "cd webapp\server && npm start"
+REM Start the client
+echo Starting Tatwats Client...
+start "Tatwats Client" cmd /k "cd webapp\client && npm start"
 
-REM Start the Frontend Application in a new window
-echo.
-
-echo Starting Frontend Application...
-start cmd /k "cd webapp\client && npm start"
-
-REM Start the Message Listener in a new window
-echo.
-
-echo Starting Message Listener...
-start cmd /k "cd helpers\the_mediator\scripts && start-listener.bat"
-
-echo.
-
-echo All components started. Please check the individual command prompt windows for status.
+echo All components started. Check the new command windows.
