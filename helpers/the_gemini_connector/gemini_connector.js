@@ -102,6 +102,54 @@ async function processGeminiRequest(message) {
     }
 }
 
+async function processReportRequest(message) {
+    const { sender, message: reportContent } = message;
+    const { reporter_id, task_id, status, details, conversation_id } = reportContent;
+
+    console.log(`Received report from ${sender}: Status - ${status}, Details - ${details}`);
+
+    try {
+        const result = await model.generateContent({
+            contents: [{ role: "user", parts: [{ text: "Log this report." }] }],
+            tools: [{
+                function_declarations: [{
+                    name: "log_report",
+                    description: "Logs a report about a task or status.",
+                    parameters: {
+                        type: "OBJECT",
+                        properties: {
+                            reporter_id: { type: "STRING", description: "ID of the helper reporting." },
+                            task_id: { type: "STRING", description: "Optional ID of the task being reported on." },
+                            status: { type: "STRING", description: "Status of the task (e.g., 'completed', 'in_progress', 'failed')." },
+                            details: { type: "STRING", description: "Detailed description of the report." }
+                        },
+                        required: ["reporter_id", "status", "details"]
+                    }
+                }]
+            }],
+            tool_config: {
+                function_calling_config: {
+                    mode: "ANY"
+                }
+            }
+        });
+
+        const call = result.response.candidates[0].content.parts[0].functionCall;
+
+        if (call && call.name === "log_report") {
+            console.log("Executing log_report tool call:", call.args);
+            await sendMessage(sender, HELPER_NAME, { type: 'report_ack', content: 'Report received and logged.', conversation_id: conversation_id });
+        } else {
+            console.warn("Gemini did not suggest calling log_report tool for the report.");
+            await sendMessage(sender, HELPER_NAME, { type: 'error', content: 'Failed to process report via Gemini.', conversation_id: conversation_id });
+        }
+
+    } catch (error) {
+        console.error('Error processing report via Gemini:', error);
+        await sendMessage(sender, HELPER_NAME, { type: 'error', content: 'Failed to process report via Gemini.', conversation_id: conversation_id });
+    }
+}
+
 async function mainLoop() {
     console.log(`${HELPER_NAME} is running...`);
     while (true) {
@@ -109,6 +157,8 @@ async function mainLoop() {
         for (const message of messages) {
             if (message.message && message.message.type === 'gemini_request') {
                 await processGeminiRequest(message);
+            } else if (message.message && message.message.type === 'report') {
+                await processReportRequest(message);
             } else {
                 console.log(`Received unhandled message from ${message.sender}:`, message.message);
             }

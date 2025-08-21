@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/en/2.0.0/).
 
 ## [Unreleased]
 
+### Added
+- **Infrastructure:** Implemented Gemini API reporting mechanism in `the_gemini_connector` to process and log helper reports.
+
 ### Changed
 - **Documentation:** Clarified the distinction between the tatwats project and the PodTracker example PWA across various helper and documentation files.
 - **Documentation:** Updated The Archivist's duties to include committing and pushing documentation changes to the GitHub repository.
