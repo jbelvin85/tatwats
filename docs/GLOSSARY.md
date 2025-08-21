@@ -1,6 +1,6 @@
 # Glossary
 
-This glossary defines key terms and acronyms used within the PodTracker project.
+This glossary defines key terms and acronyms used within the tatwats project, using PodTracker as a primary example.
 
 ---
 
@@ -18,7 +18,7 @@ A programming technique for converting data between incompatible type systems us
 
 ### Pod
 
-In the context of PodTracker, a 'Pod' refers to a playgroup of Magic: The Gathering Commander players who regularly play together and track their games.
+In the context of PodTracker (an example PWA built with tatwats), a 'Pod' refers to a playgroup of Magic: The Gathering Commander players who regularly play together and track their games.
 
 ### SWR (Stale-While-Revalidate)
 
@@ -58,4 +58,4 @@ A collectible card game created by Richard Garfield. It is the world's first tra
 
 ### Turn
 
-In the context of the PodTracker life tracker, a 'Turn' refers to a player's complete sequence of actions during a game of Magic: The Gathering, from their untap step to their end step. The life tracker will record changes and events associated with each player's turn.
+In the context of the PodTracker life tracker (an example PWA built with tatwats), a 'Turn' refers to a player's complete sequence of actions during a game of Magic: The Gathering, from their untap step to their end step. The life tracker will record changes and events associated with each player's turn.

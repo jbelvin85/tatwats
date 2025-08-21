@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/en/2.0.0/).
 
+## [Unreleased]
+
+### Changed
+- **Documentation:** Clarified the distinction between the tatwats project and the PodTracker example PWA across various helper and documentation files.
+- **Documentation:** Updated The Archivist's duties to include committing and pushing documentation changes to the GitHub repository.
+
+## 0.2.3 - 2025-08-20
+
+### Changed
+
+- **Documentation:** Updated `ROADMAP.md` to reflect the TATWATS framework context and include proposed administrative and monitoring UI pages.
+
 ## 0.2.2 - 2025-08-20
 
 ### Added

@@ -41,7 +41,7 @@ Your mission is to streamline the development workflow by taking care of minor b
 
 # Utility Conventions Guide
 
-This guide establishes **naming conventions, file organization rules, and boilerplate patterns** for utility code across the PodTracker project. Following these conventions ensures maintainability, readability, and consistency.
+This guide establishes **naming conventions, file organization rules, and boilerplate patterns** for utility code across the tatwats project. Following these conventions ensures maintainability, readability, and consistency.
 
 ---
 
