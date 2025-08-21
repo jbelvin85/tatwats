@@ -8,11 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/en/2.0.0/).
 ## [Unreleased]
 
 ### Added
+- **Frontend:** Implemented a Process Management Dashboard UI to view and control server statuses.
+- **Backend:** Added API endpoints (`/api/processes/start/:id`, `/api/processes/stop/:id`, `/api/processes/status/:id`, `/api/processes/allStatus`) for managing application processes.
+- **Infrastructure:** Implemented process spawning and termination logic in the backend server for cross-platform compatibility.
 - **Infrastructure:** Implemented Gemini API reporting mechanism in `the_gemini_connector` to process and log helper reports.
 
 ### Changed
 - **Documentation:** Clarified the distinction between the tatwats project and the PodTracker example PWA across various helper and documentation files.
 - **Documentation:** Updated The Archivist's duties to include committing and pushing documentation changes to the GitHub repository.
+
+### Fixed
+- **Infrastructure:** Resolved port conflict issues (e.g., port 3000) by implementing process termination before starting new processes.
+- **Infrastructure:** Corrected `npm install` execution for subdirectories by using `cd <directory> && npm install`.
 
 ## 0.2.3 - 2025-08-20
 

@@ -4,6 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const { spawn, exec } = require('child_process');
 
 const app = express();
 const PORT = 3001;
@@ -13,6 +14,194 @@ app.use(express.json());
 
 const helpersDir = path.join(__dirname, '../../helpers');
 const commonRoomDir = path.join(__dirname, '../the_mediator/common_room');
+
+// --- Process Management Variables ---
+const runningProcesses = new Map(); // Stores child process objects
+
+const processConfig = {
+  backend: {
+    name: 'Backend Server',
+    command: 'npm',
+    args: ['start'],
+    cwd: path.join(__dirname, '../server'),
+    statusCheck: (pid) => {
+      // For Node.js servers, check if the port is in use or if the process exists
+      return new Promise(resolve => {
+        exec(`netstat -ano | findstr :${PORT}`, (error, stdout, stderr) => {
+          if (stdout.includes(String(pid))) {
+            resolve('Running');
+          } else {
+            exec(`tasklist /FI "PID eq ${pid}"`, (err, tasklistStdout) => {
+              if (tasklistStdout.includes(String(pid))) {
+                resolve('Running');
+              } else {
+                resolve('Stopped');
+              }
+            });
+          }
+        });
+      });
+    }
+  },
+  frontend: {
+    name: 'Frontend Client',
+    command: 'npm',
+    args: ['start'],
+    cwd: path.join(__dirname, '../client'),
+    statusCheck: (pid) => {
+      return new Promise(resolve => {
+        exec(`tasklist /FI "PID eq ${pid}"`, (err, stdout) => {
+          if (stdout.includes(String(pid))) {
+            resolve('Running');
+          } else {
+            resolve('Stopped');
+          }
+        });
+      });
+    }
+  },
+  mediator: {
+    name: 'Message Listener',
+    command: 'node',
+    args: ['message_listener.js'],
+    cwd: path.join(__dirname, '../../helpers/the_mediator/scripts'),
+    statusCheck: (pid) => {
+      return new Promise(resolve => {
+        exec(`tasklist /FI "PID eq ${pid}"`, (err, stdout) => {
+          if (stdout.includes(String(pid))) {
+            resolve('Running');
+          } else {
+            resolve('Stopped');
+          }
+        });
+      });
+    }
+  },
+};
+
+// --- Helper Functions for Process Management ---
+const getProcessStatus = async (id) => {
+  const config = processConfig[id];
+  if (!config) return 'Unknown';
+
+  const childProcess = runningProcesses.get(id);
+  if (!childProcess || childProcess.killed) {
+    return 'Stopped';
+  }
+
+  // Use the specific statusCheck function if available, otherwise default to checking PID
+  if (config.statusCheck) {
+    return await config.statusCheck(childProcess.pid);
+  } else {
+    return new Promise(resolve => {
+      exec(`tasklist /FI "PID eq ${childProcess.pid}"`, (err, stdout) => {
+        if (stdout.includes(String(childProcess.pid))) {
+          resolve('Running');
+        } else {
+          resolve('Stopped');
+        }
+      });
+    });
+  }
+};
+
+// --- Process Management API Endpoints ---
+
+app.post('/api/processes/start/:id', async (req, res) => {
+  const { id } = req.params;
+  const config = processConfig[id];
+
+  if (!config) {
+    return res.status(404).json({ error: 'Process not found' });
+  }
+
+  if (runningProcesses.has(id)) {
+    const status = await getProcessStatus(id);
+    if (status === 'Running') {
+      return res.status(400).json({ message: `${config.name} is already running.` });
+    }
+  }
+
+  try {
+    // Use 'spawn' for long-running processes
+    const child = spawn(config.command, config.args, {
+      cwd: config.cwd,
+      detached: true, // Detach the child process from the parent
+      stdio: 'ignore', // Ignore stdio for detached processes
+      shell: true // Use shell to allow commands like 'npm start'
+    });
+
+    child.unref(); // Allow the parent to exit independently of the child
+
+    runningProcesses.set(id, child);
+    console.log(`${config.name} started with PID: ${child.pid}`);
+
+    // Give it a moment to start and then check status
+    setTimeout(async () => {
+      const status = await getProcessStatus(id);
+      res.json({ message: `${config.name} started.`, status, pid: child.pid });
+    }, 2000); // Wait 2 seconds for the process to initialize
+
+  } catch (error) {
+    console.error(`Error starting ${config.name}:`, error);
+    res.status(500).json({ error: `Failed to start ${config.name}.`, details: error.message });
+  }
+});
+
+app.post('/api/processes/stop/:id', async (req, res) => {
+  const { id } = req.params;
+  const config = processConfig[id];
+
+  if (!config) {
+    return res.status(404).json({ error: 'Process not found' });
+  }
+
+  const childProcess = runningProcesses.get(id);
+
+  if (!childProcess) {
+    return res.status(400).json({ message: `${config.name} is not running (no tracked PID).` });
+  }
+
+  try {
+    // On Windows, taskkill is more reliable for killing detached processes
+    exec(`taskkill /PID ${childProcess.pid} /F /T`, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Error killing process ${childProcess.pid} for ${config.name}:`, error);
+        return res.status(500).json({ error: `Failed to stop ${config.name}.`, details: error.message });
+      }
+      console.log(`${config.name} (PID: ${childProcess.pid}) stopped.`);
+      runningProcesses.delete(id);
+      res.json({ message: `${config.name} stopped.`, status: 'Stopped' });
+    });
+
+  } catch (error) {
+    console.error(`Error stopping ${config.name}:`, error);
+    res.status(500).json({ error: `Failed to stop ${config.name}.`, details: error.message });
+  }
+});
+
+app.get('/api/processes/status/:id', async (req, res) => {
+  const { id } = req.params;
+  const config = processConfig[id];
+
+  if (!config) {
+    return res.status(404).json({ error: 'Process not found' });
+  }
+
+  const status = await getProcessStatus(id);
+  res.json({ id, name: config.name, status });
+});
+
+app.get('/api/processes/allStatus', async (req, res) => {
+  const allStatuses = {};
+  for (const id in processConfig) {
+    const status = await getProcessStatus(id);
+    allStatuses[id] = { name: processConfig[id].name, status };
+  }
+  res.json(allStatuses);
+});
+
+// --- Existing API Endpoints (from previous index.js content) ---
 
 // Endpoint to get all helpers
 app.get('/api/helpers', async (req, res) => {
@@ -157,27 +346,6 @@ app.delete('/api/helpers/:name', (req, res) => {
       return res.status(500).json({ error: 'Failed to remove helper' });
     }
     res.json({ message: `Helper ${helperName} removed successfully` });
-  });
-});
-
-// Endpoint to edit (rename) a helper
-app.put('/api/helpers/:oldName/:newName', (req, res) => {
-  const oldName = req.params.oldName;
-  const newName = req.params.newName;
-
-  if (!newName) {
-    return res.status(400).json({ error: 'New helper name is required' });
-  }
-
-  const oldHelperDir = path.join(commonRoomDir, oldName);
-  const newHelperDir = path.join(commonRoomDir, newName);
-
-  fs.rename(oldHelperDir, newHelperDir, (err) => {
-    if (err) {
-      console.error(`Error renaming helper directory from ${oldName} to ${newName}:`, err);
-      return res.status(500).json({ error: 'Failed to rename helper' });
-    }
-    res.json({ message: `Helper ${oldName} renamed to ${newName} successfully` });
   });
 });
 
