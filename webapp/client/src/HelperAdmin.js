@@ -7,6 +7,7 @@ function HelperAdmin() {
   const [editedHelperName, setEditedHelperName] = useState('');
   const [loading, setLoading] = useState(true); // New loading state
   const [error, setError] = useState(null);     // New error state
+  const [showDescription, setShowDescription] = useState({}); // State to manage description visibility
 
   useEffect(() => {
     fetchHelpers();
@@ -67,8 +68,8 @@ function HelperAdmin() {
   };
 
   const handleEditClick = (helper) => {
-    setEditingHelper(helper);
-    setEditedHelperName(helper);
+    setEditingHelper(helper.name);
+    setEditedHelperName(helper.name);
   };
 
   const handleSaveEdit = async (originalName) => {
@@ -96,7 +97,6 @@ function HelperAdmin() {
 
   return (
     <div className="helper-admin-container">
-      <h2>Helper Administration</h2>
 
       {loading && <p>Loading helpers...</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
@@ -118,23 +118,31 @@ function HelperAdmin() {
               <p>No helpers found. Add one above!</p>
             ) : (
               helpers.map((helper) => (
-                <li key={helper} className="helper-item">
-                  {editingHelper === helper ? (
+                <li key={helper.name} className="helper-item">
+                  {editingHelper === helper.name ? (
                     <>
                       <input
                         type="text"
                         value={editedHelperName}
                         onChange={(e) => setEditedHelperName(e.target.value)}
                       />
-                      <button onClick={() => handleSaveEdit(helper)}>Save</button>
+                      <button onClick={() => handleSaveEdit(helper.name)}>Save</button>
                       <button onClick={() => setEditingHelper(null)}>Cancel</button>
                     </>
                   ) : (
                     <>
-                      <span>{helper}</span>
-                      <button onClick={() => handleEditClick(helper)}>Edit</button>
-                      <button onClick={() => handleDeleteHelper(helper)}>Delete</button>
+                      <span>{helper.name}</span>
+                      <button onClick={() => handleEditClick(helper.name)}>Edit</button>
+                      <button onClick={() => handleDeleteHelper(helper.name)}>Delete</button>
+                      <button onClick={() => setShowDescription(prev => ({ ...prev, [helper.name]: !prev[helper.name] }))}>
+                        {showDescription[helper.name] ? 'Hide Description' : 'Show Description'}
+                      </button>
                     </>
+                  )}
+                  {showDescription[helper.name] && (
+                    <div className="helper-description">
+                      <pre>{helper.description}</pre>
+                    </div>
                   )}
                 </li>
               ))

@@ -18,4 +18,12 @@ if %errorlevel% equ 0 (
     echo Tatwats Client process not found or could not be terminated.
 )
 
+REM Find and kill the Gemini Connector process by window title
+taskkill /FI "WINDOWTITLE eq Gemini Connector" /F >nul 2>&1
+if %errorlevel% equ 0 (
+    echo Gemini Connector stopped.
+) else (
+    echo Gemini Connector process not found or could not be terminated.
+)
+
 echo Stop process complete.

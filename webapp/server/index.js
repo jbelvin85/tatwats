@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
@@ -13,17 +15,30 @@ const helpersDir = path.join(__dirname, '../../helpers');
 const commonRoomDir = path.join(__dirname, '../the_mediator/common_room');
 
 // Endpoint to get all helpers
-app.get('/api/helpers', (req, res) => {
-  fs.readdir(helpersDir, { withFileTypes: true }, (err, entries) => {
-    if (err) {
-      console.error('Error reading helpers directory:', err);
-      return res.status(500).json({ error: 'Failed to read helpers' });
-    }
-    const helpers = entries
+app.get('/api/helpers', async (req, res) => {
+  try {
+    const entries = await fs.promises.readdir(helpersDir, { withFileTypes: true });
+    const helpers = await Promise.all(entries
       .filter(dirent => dirent.isDirectory() && dirent.name.startsWith('the_'))
-      .map(dirent => dirent.name);
+      .map(async (dirent) => {
+        const helperName = dirent.name;
+        const aboutFilePath = path.join(helpersDir, helperName, 'about.md');
+        let description = 'No description available.';
+        try {
+          description = await fs.promises.readFile(aboutFilePath, 'utf8');
+        } catch (readErr) {
+          // If about.md doesn't exist, use default description
+          if (readErr.code !== 'ENOENT') {
+            console.warn(`Could not read about.md for ${helperName}:`, readErr);
+          }
+        }
+        return { name: helperName, description };
+      }));
     res.json(helpers);
-  });
+  } catch (err) {
+    console.error('Error reading helpers directory:', err);
+    res.status(500).json({ error: 'Failed to read helpers' });
+  }
 });
 
 // Endpoint to get messages for a specific helper
@@ -164,6 +179,68 @@ app.put('/api/helpers/:oldName/:newName', (req, res) => {
     }
     res.json({ message: `Helper ${oldName} renamed to ${newName} successfully` });
   });
+});
+
+// Endpoint to edit (rename) a helper
+app.put('/api/helpers/:oldName/:newName', (req, res) => {
+  const oldName = req.params.oldName;
+  const newName = req.params.newName;
+
+  if (!newName) {
+    return res.status(400).json({ error: 'New helper name is required' });
+  }
+
+  const oldHelperDir = path.join(commonRoomDir, oldName);
+  const newHelperDir = path.join(commonRoomDir, newName);
+
+  fs.rename(oldHelperDir, newHelperDir, (err) => {
+    if (err) {
+      console.error(`Error renaming helper directory from ${oldName} to ${newName}:`, err);
+      return res.status(500).json({ error: 'Failed to rename helper' });
+    }
+    res.json({ message: `Helper ${oldName} renamed to ${newName} successfully` });
+  });
+});
+
+// Endpoint to get all messages from all helper inboxes
+app.get('/api/messages/all', async (req, res) => {
+  try {
+    const allMessages = [];
+    const helperDirs = await fs.promises.readdir(commonRoomDir, { withFileTypes: true });
+
+    for (const dirent of helperDirs) {
+      if (dirent.isDirectory()) {
+        const inboxPath = path.join(commonRoomDir, dirent.name, 'inbox');
+        try {
+          const messageFiles = await fs.promises.readdir(inboxPath);
+          for (const file of messageFiles) {
+            if (file.endsWith('.json')) {
+              const filePath = path.join(inboxPath, file);
+              try {
+                const content = await fs.promises.readFile(filePath, 'utf8');
+                allMessages.push(JSON.parse(content));
+              } catch (parseErr) {
+                console.warn(`Error parsing message file ${filePath}:`, parseErr);
+              }
+            }
+          }
+        } catch (inboxErr) {
+          // Ignore if inbox directory doesn't exist for a helper
+          if (inboxErr.code !== 'ENOENT') {
+            console.warn(`Error reading inbox for ${dirent.name}:`, inboxErr);
+          }
+        }
+      }
+    }
+
+    // Sort messages by timestamp
+    allMessages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+    res.json(allMessages);
+  } catch (err) {
+    console.error('Error fetching all messages:', err);
+    res.status(500).json({ error: 'Failed to fetch all messages' });
+  }
 });
 
 app.listen(PORT, () => {

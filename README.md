@@ -56,7 +56,24 @@ Copy
 Edit
 npm install
 Set Up Environment Variables
-Create .env with database connection strings, API keys, etc.
+This project uses environment variables to manage sensitive information and configuration.
+
+1.  **Create your `.env` file**: Copy the provided `.env.example` file to a new file named `.env` in the project root.
+    ```bash
+    cp .env.example .env
+    ```
+2.  **Configure your variables**: Open `.env` and fill in the required values, such as your `GEMINI_API_KEY` and any database connection strings.
+    *   **Important**: The `.env` file is ignored by Git and should *never* be committed to version control.
+    *   The application uses the `dotenv` package to load these variables at runtime.
+
+### Handling Sensitive Data and Generated Credentials
+
+For security and maintainability, all sensitive data, including API keys, usernames, and passwords, are managed via environment variables. When scripts generate new credentials (e.g., for new users or services), please adhere to the following directives:
+
+*   **Documentation is Mandatory**: Any script that generates credentials will output them to the console. You *must* document these generated credentials immediately in a secure location (e.g., a password manager, a secure note).
+*   **Hard Copies for Critical Data**: For critical credentials, it is strongly recommended to create a hard copy (e.g., a printout stored in a secure physical location) in addition to digital documentation.
+*   **Strong and Unique**: Always ensure generated credentials are strong, unique, and never hardcoded directly into the application's source code.
+
 
 Run Development Environment
 
