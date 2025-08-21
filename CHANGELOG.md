@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/en/2.0.0/).
 - **Frontend:** Updated the main App layout to include the new Helpers Management module.
 - **Documentation:** Added PostgreSQL connection variables to `.env.example`.
 - **Documentation:** Clarified the distinction between the tatwats project and the PodTracker example PWA across various helper and documentation files.
-- **Documentation:** Updated The Archivist's duties to include committing and pushing documentation changes to the GitHub repository.
+- **Documentation:** Renamed `The Archivist` to `The Keeper`, consolidating documentation, historical stewardship, and decision-recording responsibilities.
 
 ### Removed
 - **Infrastructure:** Removed the now-obsolete `helpers.json` configuration file.
@@ -49,10 +49,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/en/2.0.0/).
 
 ### Added
 
-- Introduced `start_all.bat` for Windows to automate launching the backend server, frontend application, and message listener.
-- Introduced `start_all.sh` for macOS/Linux to automate launching the backend server, frontend application, and message listener.
-- Introduced `stop_all.bat` for Windows to automate stopping the backend server, frontend application, and message listener.
-- Introduced `stop_all.sh` for macOS/Linux to automate stopping the backend server, frontend application, and message listener.
+- Renamed `start_all.bat` and `start_all.sh` to `start.bat` and `start.sh` for brevity.
+- Renamed `stop_all.bat` and `stop_all.sh` to `stop.bat` and `stop.sh` for brevity.
 
 ## 0.2.0 - 2025-08-20
 
