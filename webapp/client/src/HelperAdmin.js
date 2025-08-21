@@ -1,152 +1,147 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+
+const API_URL = '/api/helpers';
+
+// A reusable form for both creating and editing helpers
+const HelperForm = ({ helper, onSave, onCancel }) => {
+  const [formData, setFormData] = useState({
+    id: '',
+    name: '',
+    description: '',
+    command: '',
+    args: '[]', // Store args as a JSON string in the form
+    cwd: ''
+  });
+
+  useEffect(() => {
+    if (helper) {
+      setFormData({
+        ...helper,
+        args: JSON.stringify(helper.args || [], null, 2) // Pretty print JSON for editing
+      });
+    } else {
+      // Reset for new helper form
+      setFormData({ id: '', name: '', description: '', command: '', args: '[]', cwd: '' });
+    }
+  }, [helper]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    try {
+      // Validate and parse the JSON arguments before saving
+      const parsedArgs = JSON.parse(formData.args);
+      onSave({ ...formData, args: parsedArgs });
+    } catch (error) {
+      alert('Error: "Args" field must contain valid JSON.');
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="helper-form">
+      <input name="id" value={formData.id} onChange={handleChange} placeholder="ID (e.g., 'the_architect')" required disabled={!!helper} />
+      <input name="name" value={formData.name} onChange={handleChange} placeholder="Name (e.g., 'The Architect')" required />
+      <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Description" />
+      <input name="command" value={formData.command} onChange={handleChange} placeholder="Command (e.g., 'node')" required />
+      <textarea name="args" value={formData.args} onChange={handleChange} placeholder='Args (JSON array, e.g., ["script.js"])' required />
+      <input name="cwd" value={formData.cwd} onChange={handleChange} placeholder="Working Directory (e.g., 'helpers/the_architect')" required />
+      <div className="form-actions">
+        <button type="submit">Save</button>
+        <button type="button" onClick={onCancel}>Cancel</button>
+      </div>
+    </form>
+  );
+};
 
 function HelperAdmin() {
   const [helpers, setHelpers] = useState([]);
-  const [newHelperName, setNewHelperName] = useState('');
-  const [editingHelper, setEditingHelper] = useState(null);
-  const [editedHelperName, setEditedHelperName] = useState('');
-  const [loading, setLoading] = useState(true); // New loading state
-  const [error, setError] = useState(null);     // New error state
-  const [showDescription, setShowDescription] = useState({}); // State to manage description visibility
+  const [editingHelper, setEditingHelper] = useState(null); // Can be a helper object or `true` for a new one
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchHelpers = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(API_URL);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      setHelpers(data);
+    } catch (e) {
+      setError(`Failed to load helpers: ${e.message}`);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     fetchHelpers();
-  }, []);
+  }, [fetchHelpers]);
 
-  const fetchHelpers = async () => {
-    try {
-      setLoading(true); // Set loading to true before fetch
-      setError(null);   // Clear any previous errors
-      const response = await fetch('/api/helpers'); // Use relative path due to proxy
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      setHelpers(data);
-    } catch (error) {
-      console.error("Error fetching helpers:", error);
-      setError("Failed to load helpers. Please check the server and your network connection."); // Set user-friendly error message
-    } finally {
-      setLoading(false); // Set loading to false after fetch (success or failure)
-    }
-  };
-
-  const handleAddHelper = async (e) => {
-    e.preventDefault();
-    if (!newHelperName.trim()) return;
+  const handleSave = async (helperData) => {
+    const isNew = !helperData.id || !helpers.some(h => h.id === helperData.id);
+    const url = isNew ? API_URL : `${API_URL}/${helperData.id}`;
+    const method = isNew ? 'POST' : 'PUT';
 
     try {
-      const response = await fetch('/api/helpers', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name: newHelperName }),
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(helperData),
       });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      setNewHelperName('');
-      fetchHelpers(); // Refresh the list
-    } catch (error) {
-      console.error("Error adding helper:", error);
-    }
-  };
-
-  const handleDeleteHelper = async (helperName) => {
-    try {
-      const response = await fetch(`/api/helpers/${helperName}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      fetchHelpers(); // Refresh the list
-    } catch (error) {
-      console.error("Error deleting helper:", error);
-    }
-  };
-
-  const handleEditClick = (helper) => {
-    setEditingHelper(helper.name);
-    setEditedHelperName(helper.name);
-  };
-
-  const handleSaveEdit = async (originalName) => {
-    if (!editedHelperName.trim() || originalName === editedHelperName) {
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       setEditingHelper(null);
-      return;
+      fetchHelpers(); // Refresh list
+    } catch (e) {
+      alert(`Failed to save helper: ${e.message}`);
     }
+  };
 
-    try {
-      const response = await fetch(`/api/helpers/${originalName}/${editedHelperName}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+  const handleDelete = async (id) => {
+    if (window.confirm(`Are you sure you want to delete helper "${id}"?`)) {
+      try {
+        const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        if (!response.ok && response.status !== 204) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        fetchHelpers(); // Refresh list
+      } catch (e) {
+        alert(`Failed to delete helper: ${e.message}`);
       }
-      setEditingHelper(null);
-      fetchHelpers(); // Refresh the list
-    } catch (error) {
-      console.error("Error editing helper:", error);
     }
   };
 
   return (
     <div className="helper-admin-container">
-
-      {loading && <p>Loading helpers...</p>}
+      <h2>Helpers Management</h2>
+      {loading && <p>Loading...</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
-
+      
       {!loading && !error && (
         <>
-          <form onSubmit={handleAddHelper} className="add-helper-form">
-            <input
-              type="text"
-              placeholder="New Helper Name"
-              value={newHelperName}
-              onChange={(e) => setNewHelperName(e.target.value)}
+          {editingHelper ? (
+            <HelperForm 
+              helper={editingHelper === true ? null : editingHelper} 
+              onSave={handleSave} 
+              onCancel={() => setEditingHelper(null)} 
             />
-            <button type="submit">Add Helper</button>
-          </form>
+          ) : (
+            <button onClick={() => setEditingHelper(true)}>Add New Helper</button>
+          )}
 
           <ul className="helper-list">
-            {helpers.length === 0 ? (
-              <p>No helpers found. Add one above!</p>
-            ) : (
-              helpers.map((helper) => (
-                <li key={helper.name} className="helper-item">
-                  {editingHelper === helper.name ? (
-                    <>
-                      <input
-                        type="text"
-                        value={editedHelperName}
-                        onChange={(e) => setEditedHelperName(e.target.value)}
-                      />
-                      <button onClick={() => handleSaveEdit(helper.name)}>Save</button>
-                      <button onClick={() => setEditingHelper(null)}>Cancel</button>
-                    </>
-                  ) : (
-                    <>
-                      <span>{helper.name}</span>
-                      <button onClick={() => handleEditClick(helper.name)}>Edit</button>
-                      <button onClick={() => handleDeleteHelper(helper.name)}>Delete</button>
-                      <button onClick={() => setShowDescription(prev => ({ ...prev, [helper.name]: !prev[helper.name] }))}>
-                        {showDescription[helper.name] ? 'Hide Description' : 'Show Description'}
-                      </button>
-                    </>
-                  )}
-                  {showDescription[helper.name] && (
-                    <div className="helper-description">
-                      <pre>{helper.description}</pre>
-                    </div>
-                  )}
-                </li>
-              ))
-            )}
+            {helpers.map((helper) => (
+              <li key={helper.id} className="helper-item">
+                <span><strong>{helper.name}</strong> ({helper.id})</span>
+                <div className="item-actions">
+                  <button onClick={() => setEditingHelper(helper)}>Edit</button>
+                  <button onClick={() => handleDelete(helper.id)}>Delete</button>
+                </div>
+              </li>
+            ))}
           </ul>
         </>
       )}

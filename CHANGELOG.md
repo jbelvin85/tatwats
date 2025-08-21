@@ -8,14 +8,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/en/2.0.0/).
 ## [Unreleased]
 
 ### Added
+- **Database:** Integrated PostgreSQL for managing helper definitions.
+- **Database:** Implemented a `database.js` module with connection pooling and initialization logic.
+- **Database:** Created a `helpers` table to store process configurations.
+- **Backend:** Added full CRUD API endpoints (`/api/helpers`) for managing helpers in the database.
+- **Frontend:** Developed a new "Helpers Management" module (`HelperAdmin.js`) for full CRUD operations on the helpers table.
 - **Frontend:** Implemented a Process Management Dashboard UI to view and control server statuses.
 - **Backend:** Added API endpoints (`/api/processes/start/:id`, `/api/processes/stop/:id`, `/api/processes/status/:id`, `/api/processes/allStatus`) for managing application processes.
 - **Infrastructure:** Implemented process spawning and termination logic in the backend server for cross-platform compatibility.
 - **Infrastructure:** Implemented Gemini API reporting mechanism in `the_gemini_connector` to process and log helper reports.
 
 ### Changed
+- **Architecture:** Migrated core process configuration from a file-based (`helpers.json`) to a database-driven system.
+- **Backend:** Refactored server startup to load helper configurations from PostgreSQL.
+- **Frontend:** Updated the main App layout to include the new Helpers Management module.
+- **Documentation:** Added PostgreSQL connection variables to `.env.example`.
 - **Documentation:** Clarified the distinction between the tatwats project and the PodTracker example PWA across various helper and documentation files.
 - **Documentation:** Updated The Archivist's duties to include committing and pushing documentation changes to the GitHub repository.
+
+### Removed
+- **Infrastructure:** Removed the now-obsolete `helpers.json` configuration file.
 
 ### Fixed
 - **Infrastructure:** Resolved port conflict issues (e.g., port 3000) by implementing process termination before starting new processes.

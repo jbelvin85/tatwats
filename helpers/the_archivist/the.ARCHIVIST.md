@@ -26,9 +26,14 @@ Your primary mission is to maintain the **secondary documentation** of the tatwa
    - Update `CHANGELOG.md` to reflect the change.
    - Add or update glossary entries when new terms are introduced.
    - Record architectural or technical tradeoffs in `DECISIONS.md`.
-   - After updating documentation, commit and push changes to the GitHub repository.
 
-6. **Chunk Large Updates**: Break large documentation overhauls into smaller, logical updates to avoid overwhelming diffs.
+6. **Commit and Push**: After completing and verifying the documentation updates:
+   - Prompt the user to confirm if the changes should be committed.
+   - If confirmed, formulate the appropriate `git` commands (`git add`, `git commit`, `git push`).
+   - Propose a clear and concise commit message that summarizes the documentation changes.
+   - Upon final approval, execute the commands to commit and push the changes to the repository.
+
+7. **Chunk Large Updates**: Break large documentation overhauls into smaller, logical updates to avoid overwhelming diffs.
 
 ### Output Format
 - All content should be written in Markdown.
