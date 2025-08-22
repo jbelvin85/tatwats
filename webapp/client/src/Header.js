@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom'; // Import Link
 import './Header.css'; // We'll create this CSS file later
 
 function Header() {
@@ -6,9 +7,11 @@ function Header() {
     <header className="app-header">
       <nav>
         <ul>
-          <li><a href="/">Dashboard</a></li>
-          <li><a href="/helper-admin">Helper Admin</a></li>
-          <li><a href="/chat-monitor">Chat Monitor</a></li>
+          <li><Link to="/">Home</Link></li>
+          <li><Link to="/processes">Process Management</Link></li>
+          <li><Link to="/helpers">Helper Admin</Link></li>
+          <li><Link to="/chat">Chat</Link></li>
+          <li><Link to="/users">User Management</Link></li> {/* New link for User Management */}
         </ul>
       </nav>
     </header>

@@ -1,17 +1,91 @@
 .dashboard-container {
   padding: 20px;
-  font-family: Arial, sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f0f2f5;
+  min-height: 100vh;
+  color: #333;
 }
 
 .dashboard-container h2 {
   text-align: center;
-  color: #333;
+  color: #2c3e50;
   margin-bottom: 30px;
+  font-size: 2.5em;
+  font-weight: 600;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+}
+
+.dashboard-summary {
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  padding: 25px;
+  margin-bottom: 40px;
+  text-align: center;
+  font-size: 1.1em;
+  line-height: 1.6;
+  color: #555;
 }
 
 .process-cards-container {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 20px; /* Space between cards */
+  gap: 25px; /* Space between cards */
+  padding: 20px 0;
+}
+
+.loading-message,
+.error-message {
+  text-align: center;
+  padding: 20px;
+  font-size: 1.2em;
+  font-weight: bold;
+  border-radius: 8px;
+  margin: 20px auto;
+  max-width: 600px;
+}
+
+.loading-message {
+  background-color: #e0f7fa;
+  color: #00796b;
+  border: 1px solid #00796b;
+}
+
+.error-message {
+  background-color: #ffebee;
+  color: #d32f2f;
+  border: 1px solid #d32f2f;
+}
+
+.recent-chats-card {
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  padding: 25px;
+  margin-top: 40px;
+  text-align: left;
+}
+
+.recent-chats-card h3 {
+  color: #2c3e50;
+  margin-bottom: 20px;
+  font-size: 1.8em;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.recent-chats-card ul {
+  list-style: none;
+  padding: 0;
+}
+
+.recent-chats-card li {
+  padding: 10px 0;
+  border-bottom: 1px dashed #eee;
+  color: #555;
+}
+
+.recent-chats-card li:last-child {
+  border-bottom: none;
 }

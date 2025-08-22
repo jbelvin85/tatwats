@@ -56,13 +56,18 @@ Copy
 Edit
 npm install
 Set Up Environment Variables
+
 This project uses environment variables to manage sensitive information and configuration.
 
-1.  **Create your `.env` file**: Copy the provided `.env.example` file to a new file named `.env` in the project root.
-    ```bash
-    cp .env.example .env
-    ```
-2.  **Configure your variables**: Open `.env` and fill in the required values, such as your `GEMINI_API_KEY` and any database connection strings.
+1.  **Run the setup script**: Execute the appropriate setup script for your operating system. This script will guide you through configuring the necessary environment variables and create the `.env` file.
+    *   **Windows**:
+        ```bash
+        setup.bat
+        ```
+    *   **Linux/macOS**:
+        ```bash
+        ./setup.sh
+        ```
     *   **Important**: The `.env` file is ignored by Git and should *never* be committed to version control.
     *   The application uses the `dotenv` package to load these variables at runtime.
 
@@ -74,14 +79,19 @@ For security and maintainability, all sensitive data, including API keys, userna
 *   **Hard Copies for Critical Data**: For critical credentials, it is strongly recommended to create a hard copy (e.g., a printout stored in a secure physical location) in addition to digital documentation.
 *   **Strong and Unique**: Always ensure generated credentials are strong, unique, and never hardcoded directly into the application's source code.
 
-
 Run Development Environment
 
-bash
-Copy
-Edit
-docker-compose up --build
-npm run dev
+To start the application, run the deploy script:
+*   **Windows**:
+    ```bash
+    deploy.bat
+    ```
+*   **Linux/macOS**:
+    ```bash
+    ./deploy.sh
+    ```
+This will build the Docker images, set up the necessary environment variables (if not already done), and start all services.
+
 Generate / Update Documentation
 
 bash

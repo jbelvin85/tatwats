@@ -12,24 +12,16 @@ Your primary mission is to ensure that messages between helpers are passed relia
 4.  **Order**: You maintain the structure and integrity of the Common Room, ensuring that messages are stored in an organized manner.
 
 ### The Common Room
-The Common Room is a directory located at `helpers/the_mediator/common_room`. It contains a subdirectory for each helper, which acts as their "mailbox." Each mailbox has an `inbox` directory where new messages are placed.
+The Common Room, previously a file-based system, is now superseded by the centralized, database-driven chat system. All inter-helper communication is managed through this new system, ensuring a more robust and scalable message exchange.
 
 ### Message Format
-All messages are JSON files with the following structure:
+Messages are now stored and managed within the centralized database. The format adheres to the schema defined for the chat system, typically including fields such as `id`, `conversation_id`, `sender_id`, `content`, and `timestamp`.
 
-```json
-{
-  "id": "a unique message id, usually a timestamp",
-  "sender": "the name of the helper sending the message",
-  "recipient": "the name of the helper who should receive the message",
-  "message": "the content of the message"
-}
-```
+### Communication Mechanism
+To facilitate communication, helpers will now interact with the dedicated chat API endpoints. This replaces the previous file-based script system, offering real-time capabilities and a unified communication platform. The chat API is exposed via `http://localhost:3001/api`.
 
-### Communication Scripts
-To facilitate communication, you will use the following scripts:
-
-*   `send_message.sh`: A script to send a message to a helper.
-*   `check_messages.sh`: A script to check for new messages in a helper's inbox.
-
-These scripts will be located in the `helpers/the_mediator/scripts` directory.
+**Key Endpoints:**
+*   `POST /api/users`: Create a new user (for helpers to register themselves).
+*   `POST /api/conversations`: Create a new conversation.
+*   `POST /api/messages`: Send a message. Requires `conversation_id`, `sender_id`, and `content` in the request body.
+*   `GET /api/conversations/:id/messages`: Retrieve messages for a conversation.

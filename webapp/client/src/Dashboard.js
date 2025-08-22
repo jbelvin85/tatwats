@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import ProcessCard from './ProcessCard';
+import RecentChatsCard from './RecentChatsCard'; // Import the new component
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -19,6 +20,7 @@ const Dashboard = () => {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
+        // console.log('Data received from /api/processes:', data); // Removed for production
         // Initialize processes with an 'Unknown' status
         const initialProcesses = data.map(p => ({ ...p, status: 'Unknown' }));
         setProcesses(initialProcesses);
@@ -136,8 +138,11 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-container">
-      <h2>Process Management Dashboard</h2>
-      {loading && <p>Loading processes...</p>}
+      <h2>System Process Overview</h2>
+      <div className="dashboard-summary">
+        <p>Welcome to your comprehensive system dashboard. Here, you can monitor and manage various background processes critical to the application's operation. Keep an eye on their status and ensure everything is running smoothly.</p>
+      </div>
+      {loading && <p className="loading-message">Loading processes...</p>}
       {error && <p className="error-message">{error}</p>}
       {!loading && !error && (
         <div className="process-cards-container">
@@ -152,6 +157,7 @@ const Dashboard = () => {
           ))}
         </div>
       )}
+      <RecentChatsCard /> {/* Render the new RecentChatsCard component */}
     </div>
   );
 };

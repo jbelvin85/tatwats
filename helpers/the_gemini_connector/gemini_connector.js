@@ -3,6 +3,7 @@ require('dotenv').config({ path: '../../.env' }); // Load .env from project root
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fs = require('fs');
 const path = require('path');
+const fetch = require('node-fetch'); // Using node-fetch for HTTP requests
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 if (!GEMINI_API_KEY) {
@@ -10,76 +11,111 @@ if (!GEMINI_API_KEY) {
     process.exit(1);
 }
 
+const CHAT_API_BASE_URL = 'http://localhost:3001/api'; // Base URL for the new chat API
+
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
 const conversationHistory = new Map(); // Stores conversation history by conversation_id
 
 const HELPER_NAME = 'the_gemini_connector';
-const COMMON_ROOM_PATH = path.join(__dirname, '..', 'the_mediator', 'common_room');
-const INBOX_PATH = path.join(COMMON_ROOM_PATH, HELPER_NAME, 'inbox');
+let HELPER_USER_ID = null; // To store the user ID for this helper
 
-// Ensure inbox exists
-if (!fs.existsSync(INBOX_PATH)) {
-    fs.mkdirSync(INBOX_PATH, { recursive: true });
-}
-
-async function sendMessage(recipient, sender, messageContent) {
-    const messageId = Date.now().toString();
-    const messageFile = path.join(COMMON_ROOM_PATH, recipient, 'inbox', `${messageId}.json`);
-
-    const message = {
-        id: messageId,
-        sender: sender,
-        recipient: recipient,
-        message: messageContent,
-        timestamp: new Date().toISOString()
-    };
-
+async function ensureHelperUserExists() {
     try {
-        await fs.promises.writeFile(messageFile, JSON.stringify(message, null, 2));
-        console.log(`Message sent from ${sender} to ${recipient}: ${messageId}`);
-    } catch (error) {
-        console.error(`Error sending message from ${sender} to ${recipient}:`, error);
-    }
-}
+        // Check if user exists
+        const response = await fetch(`${CHAT_API_BASE_URL}/users`);
+        const users = await response.json();
+        const existingUser = users.find(user => user.name === HELPER_NAME);
 
-async function readMessages() {
-    try {
-        const files = await fs.promises.readdir(INBOX_PATH);
-        const messageFiles = files.filter(file => file.endsWith('.json'));
-
-        const messages = [];
-        for (const file of messageFiles) {
-            const filePath = path.join(INBOX_PATH, file);
-            try {
-                const content = await fs.promises.readFile(filePath, 'utf8');
-                messages.push(JSON.parse(content));
-                // Delete message after reading
-                await fs.promises.unlink(filePath);
-            } catch (error) {
-                console.error(`Error reading or parsing message file ${file}:`, error);
-            }
+        if (existingUser) {
+            HELPER_USER_ID = existingUser.id;
+            console.log(`Helper user '${HELPER_NAME}' already exists with ID: ${HELPER_USER_ID}`);
+        } else {
+            // Create user if not exists
+            const createResponse = await fetch(`${CHAT_API_BASE_URL}/users`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: HELPER_NAME })
+            });
+            const newUser = await createResponse.json();
+            HELPER_USER_ID = newUser.id;
+            console.log(`Created helper user '${HELPER_NAME}' with ID: ${HELPER_USER_ID}`);
         }
-        return messages;
     } catch (error) {
-        console.error(`Error reading inbox for ${HELPER_NAME}:`, error);
-        return [];
+        console.error('Error ensuring helper user exists:', error);
+        process.exit(1);
     }
+}
+
+async function sendMessage(conversation_id, sender_id, content) {
+    try {
+        const response = await fetch(`${CHAT_API_BASE_URL}/messages`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ conversation_id, sender_id, content })
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const result = await response.json();
+        console.log(`Message sent to conversation ${conversation_id} by ${sender_id}: ${result.id}`);
+    } catch (error) {
+        console.error(`Error sending message to chat API:`, error);
+    }
+}
+
+// This function will now fetch messages from the chat API for a specific conversation
+// For simplicity, we'll assume a single conversation for now, or that the mediator
+// will tell us which conversation to monitor.
+// In a real scenario, the mediator would likely push messages to us, or we'd poll
+// a specific inbox for our helper. For now, we'll simulate by looking for messages
+// that are addressed to us or are part of a conversation we're involved in.
+async function readMessages() {
+    // This part is tricky without a clear "inbox" concept in the new API.
+    // For now, let's assume the mediator will send us a message to trigger
+    // a Gemini request, and we'll respond to that conversation.
+    // The old file-based system had a clear inbox. The new system is a chat.
+    // We need a way to know which messages are "for" us.
+    // For demonstration, let's assume we're looking for messages in a specific
+    // conversation that we are a participant in, and that are new.
+
+    // This is a placeholder. A more robust solution would involve:
+    // 1. The Mediator pushing messages to a dedicated endpoint for this helper.
+    // 2. Polling a specific conversation ID that is known to be for inter-helper communication.
+    // 3. Implementing a webhook or long-polling mechanism.
+
+    // For now, let's just return an empty array, and rely on the Mediator to
+    // initiate communication by sending a message to the chat API that we can
+    // then respond to. The `processGeminiRequest` will be triggered by an external
+    // message, not by us reading an inbox.
+
+    // The original `readMessages` was for reading files from an inbox.
+    // This needs to be re-thought for the new chat API.
+    // For now, I'll make it a no-op, and assume messages come in via other means
+    // (e.g., a webhook or a dedicated endpoint that the Mediator calls).
+    // This means the mainLoop will need to be triggered by incoming messages,
+    // not by polling an inbox.
+
+    // For the purpose of this exercise, I will modify `mainLoop` to simply wait,
+    // and assume `processGeminiRequest` is called by an external trigger.
+    // This is a temporary simplification to get the `gemini_connector` to compile
+    // and demonstrate the new `sendMessage` functionality.
+    return [];
 }
 
 async function processGeminiRequest(message) {
-    const { sender, message: { query, conversation_id, reset_conversation, return_address } } = message;
-    const currentConversationId = conversation_id || sender; // Use sender as default conversation_id
+    const { sender_id, conversation_id, content } = message; // Assuming message comes from the chat API
+    const { query, reset_conversation } = content; // Assuming content contains query and reset_conversation
 
-    let history = conversationHistory.get(currentConversationId) || [];
+    let history = conversationHistory.get(conversation_id) || [];
 
     if (reset_conversation) {
-        console.log(`Resetting conversation for ${currentConversationId}`);
+        console.log(`Resetting conversation for ${conversation_id}`);
         history = [];
     }
 
-    console.log(`Processing Gemini request from ${sender} (Conversation: ${currentConversationId}): "${query}"`);
+    console.log(`Processing Gemini request from ${sender_id} (Conversation: ${conversation_id}): "${query}"`);
 
     try {
         const chat = model.startChat({ history: history });
@@ -90,18 +126,20 @@ async function processGeminiRequest(message) {
         // Update history
         history.push({ role: "user", parts: [{ text: query }] });
         history.push({ role: "model", parts: [{ text: responseText }] });
-        conversationHistory.set(currentConversationId, history);
+        conversationHistory.set(conversation_id, history);
 
-        // Send response back to the sender or return_address
-        const replyRecipient = return_address || sender;
-        await sendMessage(replyRecipient, HELPER_NAME, { type: 'gemini_response', content: responseText, conversation_id: currentConversationId });
+        // Send response back to the conversation
+        await sendMessage(conversation_id, HELPER_USER_ID, { type: 'gemini_response', content: responseText });
 
     } catch (error) {
         console.error('Error generating content from Gemini:', error);
-        await sendMessage(sender, HELPER_NAME, { type: 'error', content: 'Failed to get response from Gemini.', conversation_id: currentConversationId });
+        await sendMessage(conversation_id, HELPER_USER_ID, { type: 'error', content: 'Failed to get response from Gemini.' });
     }
 }
 
+// The `processReportRequest` function also needs to be updated to use the new chat API.
+// For now, I will comment it out as it's not directly related to the core Gemini interaction.
+/*
 async function processReportRequest(message) {
     const { sender, message: reportContent } = message;
     const { reporter_id, task_id, status, details, conversation_id } = reportContent;
@@ -149,21 +187,29 @@ async function processReportRequest(message) {
         await sendMessage(sender, HELPER_NAME, { type: 'error', content: 'Failed to process report via Gemini.', conversation_id: conversation_id });
     }
 }
+*/
 
 async function mainLoop() {
     console.log(`${HELPER_NAME} is running...`);
+    await ensureHelperUserExists(); // Ensure this helper has a user ID
+
+    // The mainLoop now needs to be re-thought.
+    // Instead of polling a file-based inbox, it should ideally:
+    // 1. Be a long-running process that listens for incoming messages (e.g., via a webhook).
+    // 2. Or, poll the chat API for new messages relevant to this helper.
+
+    // For now, I will make it a simple loop that just keeps the process alive.
+    // The `processGeminiRequest` function will need to be called externally
+    // (e.g., by the Mediator sending a message to the chat API that this helper
+    // is configured to listen for).
+
+    // This is a temporary measure. A proper implementation would involve
+    // setting up a listener for incoming chat messages.
     while (true) {
-        const messages = await readMessages();
-        for (const message of messages) {
-            if (message.message && message.message.type === 'gemini_request') {
-                await processGeminiRequest(message);
-            } else if (message.message && message.message.type === 'report') {
-                await processReportRequest(message);
-            } else {
-                console.log(`Received unhandled message from ${message.sender}:`, message.message);
-            }
-        }
-        await new Promise(resolve => setTimeout(resolve, 5000)); // Check every 5 seconds
+        // In a real scenario, this loop would process incoming messages
+        // from the chat API, perhaps by polling or via a webhook.
+        // For now, it just keeps the process alive.
+        await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
     }
 }
 

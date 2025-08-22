@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawn, exec } = require('child_process');
 const { pool, initializeDatabase } = require('./database');
+const net = require('net'); // Import the net module
 
 const app = express();
 const PORT = 3001;
@@ -12,55 +13,71 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json());
 
+// Logging middleware for all incoming requests
+app.use((req, res, next) => {
+  // console.log(`${req.method} ${req.url}`); // Removed for production
+  next();
+});
+
 const helpersDir = path.join(__dirname, '../../helpers');
 const commonRoomDir = path.join(__dirname, '../the_mediator/common_room');
 
-// --- Process Management Variables ---
-const runningProcesses = new Map();
-let processConfig = {}; // Will be loaded from the database
+// --- Process Management Variables (Core Services) ---
+const runningProcesses = new Map(); // Keep this for tracking spawned processes if needed elsewhere
 
-// --- Load Process Configuration from Database ---
-const loadProcessConfigFromDb = async () => {
-  try {
-    const { rows } = await pool.query('SELECT * FROM helpers');
-    const newConfig = {};
-    rows.forEach(p => {
-      newConfig[p.id] = {
-        ...p, // id, name, description, command, args, cwd
-        cwd: path.join(__dirname, '../../', p.cwd), // Resolve cwd relative to project root
-      };
-    });
-
-    // Add specific, non-serializable status checks
-    if (newConfig.backend) {
-      newConfig.backend.statusCheck = (pid) => new Promise(resolve => {
-        exec(`netstat -ano | findstr :${PORT}`, (error, stdout) => {
-          if (stdout && stdout.includes(String(pid))) {
-            resolve('Running');
-          } else {
-            exec(`tasklist /FI "PID eq ${pid}"`, (err, tasklistStdout) => {
-              resolve(tasklistStdout.includes(String(pid)) ? 'Running' : 'Stopped');
-            });
-          }
+// Define core services and their status check methods
+const processConfig = {
+  db: {
+    id: 'db',
+    name: 'Database (PostgreSQL)',
+    description: 'The PostgreSQL database service.',
+    statusCheck: async () => {
+      try {
+        await pool.query('SELECT 1'); // Simple query to check database connection
+        return 'Running';
+      } catch (error) {
+        return 'Stopped';
+      }
+    },
+  },
+  backend: {
+    id: 'backend',
+    name: 'Backend API Server',
+    description: 'The Node.js Express API server.',
+    statusCheck: async () => {
+      // Check if the backend server is listening on its port
+      return new Promise(resolve => {
+        const client = new net.Socket();
+        client.once('connect', () => {
+          client.end();
+          resolve('Running');
         });
+        client.once('error', () => {
+          resolve('Stopped');
+        });
+        client.connect(PORT, 'localhost'); // Connect to the backend's exposed port
       });
-    }
-
-    const genericStatusCheck = (pid) => new Promise(resolve => {
-      exec(`tasklist /FI "PID eq ${pid}"`, (err, stdout) => {
-        resolve(stdout.includes(String(pid)) ? 'Running' : 'Stopped');
+    },
+  },
+  frontend: {
+    id: 'frontend',
+    name: 'Frontend Web Server',
+    description: 'The Nginx server serving the React frontend.',
+    statusCheck: async () => {
+      // Check if the frontend server is listening on its port (host port 3000)
+      return new Promise(resolve => {
+        const client = new net.Socket();
+        client.once('connect', () => {
+          client.end();
+          resolve('Running');
+        });
+        client.once('error', () => {
+          resolve('Stopped');
+        });
+        client.connect(3000, 'localhost'); // Connect to the frontend's exposed port
       });
-    });
-
-    if (newConfig.frontend) newConfig.frontend.statusCheck = genericStatusCheck;
-    if (newConfig.mediator) newConfig.mediator.statusCheck = genericStatusCheck;
-
-    processConfig = newConfig;
-    console.log('Successfully loaded process configuration from the database.');
-  } catch (error) {
-    console.error('Failed to load process configuration from database:', error);
-    process.exit(1);
-  }
+    },
+  },
 };
 
 
@@ -69,20 +86,23 @@ const getProcessStatus = async (id) => {
   const config = processConfig[id];
   if (!config) return 'Unknown';
 
-  const childProcess = runningProcesses.get(id);
-  if (!childProcess || childProcess.killed) {
-    return 'Stopped';
-  }
-
+  // Use the statusCheck method defined in processConfig for each service
   if (config.statusCheck) {
-    return await config.statusCheck(childProcess.pid);
+    return await config.statusCheck(); // No PID needed for these checks
   } else {
+    // Fallback for other types of processes if they are added later
+    const childProcess = runningProcesses.get(id);
+    if (!childProcess || childProcess.killed) {
+      return 'Stopped';
+    }
     return new Promise(resolve => {
-      exec(`tasklist /FI "PID eq ${childProcess.pid}"`, (err, stdout) => {
-        if (stdout.includes(String(childProcess.pid))) {
-          resolve('Running');
+      exec(`taskkill /PID ${childProcess.pid} /F /T`, (error, stdout, stderr) => {
+        if (error) {
+          console.error(`Error killing process ${childProcess.pid} for ${config.name}:`, error);
+          reject(error);
         } else {
-          resolve('Stopped');
+          console.log(`Process ${child.pid} killed.`);
+          resolve();
         }
       });
     });
@@ -92,6 +112,7 @@ const getProcessStatus = async (id) => {
 // --- Process Management API Endpoints ---
 
 app.get('/api/processes', (req, res) => {
+  // console.log('GET /api/processes: processConfig =', processConfig); // Removed for production
   const clientSafeConfig = Object.values(processConfig).map(p => ({
     id: p.id,
     name: p.name,
@@ -157,7 +178,7 @@ app.post('/api/processes/stop/:id', async (req, res) => {
     });
   } catch (error) {
     console.error(`Error stopping ${config.name}:`, error);
-    res.status(500).json({ error: `Failed to stop ${config.name}.`, details: error.message });
+    res.status(500).json({ error: 'Failed to stop ${config.name}.', details: error.message });
   }
 });
 
@@ -181,6 +202,7 @@ app.get('/api/processes/allStatus', async (req, res) => {
 });
 
 // --- Existing API Endpoints ---
+app.use('/api', require('./routes')); // Mount the routes from routes.js
 
 // --- Helper CRUD API Endpoints ---
 
@@ -284,7 +306,7 @@ app.get('/api/helpers/:helper/messages', (req, res) => {
 const startServer = async () => {
   try {
     await initializeDatabase();
-    await loadProcessConfigFromDb();
+    // No need to call loadProcessConfigFromDb() here, as processConfig is now static for core services
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);
     });
@@ -305,7 +327,7 @@ process.on('SIGINT', () => {
     const promise = new Promise((resolve, reject) => {
       exec(`taskkill /PID ${child.pid} /F /T`, (error, stdout, stderr) => {
         if (error) {
-          console.error(`Failed to kill process ${child.pid}:`, error);
+          console.error(`Error killing process ${child.pid}:`, error);
           reject(error);
         } else {
           console.log(`Process ${child.pid} killed.`);

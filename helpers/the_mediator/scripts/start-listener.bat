@@ -1,3 +1,0 @@
-@echo off
-echo Starting message listener...
-node message_listener.js

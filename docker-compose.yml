@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:13
+    restart: always
+    environment:
+      POSTGRES_USER: ${PGUSER:-user}
+      POSTGRES_PASSWORD: ${PGPASSWORD:-password}
+      POSTGRES_DB: ${PGDATABASE:-tatwats_chat_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./webapp/server
+    ports:
+      - "3001:3001"
+    environment:
+      PGUSER: ${PGUSER:-user}
+      PGPASSWORD: ${PGPASSWORD:-password}
+      PGDATABASE: ${PGDATABASE:-tatwats_chat_db}
+      PGHOST: db # Connect to the 'db' service within the Docker network
+      PGPORT: 5432
+    depends_on:
+      - db
+    restart: always
+
+  frontend:
+    build: ./webapp/client
+    ports:
+      - "3000:80" # Map host port 3000 to container port 80 (Nginx default)
+    depends_on:
+      - backend # Frontend depends on backend API
+    restart: always
+
+volumes:
+  db_data:
