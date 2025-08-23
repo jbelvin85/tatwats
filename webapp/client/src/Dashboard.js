@@ -1,163 +1,74 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import ProcessCard from './ProcessCard';
-import RecentChatsCard from './RecentChatsCard'; // Import the new component
+import React, { useState, useEffect } from 'react'; // Added useState, useEffect
+import RecentChatsCard from './RecentChatsCard';
 import './Dashboard.css';
 
 const Dashboard = () => {
-  const [processes, setProcesses] = useState([]);
+  const [userCount, setUserCount] = useState('...');
+  const [conversationCount, setConversationCount] = useState('...');
+  const [messageCount, setMessageCount] = useState('...');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const API_BASE_URL = 'http://localhost:3001/api/processes';
-
-  // Effect to fetch the initial list of processes
   useEffect(() => {
-    const fetchProcesses = async () => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        setLoading(true);
-        const response = await fetch(API_BASE_URL);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        // console.log('Data received from /api/processes:', data); // Removed for production
-        // Initialize processes with an 'Unknown' status
-        const initialProcesses = data.map(p => ({ ...p, status: 'Unknown' }));
-        setProcesses(initialProcesses);
-        setError(null);
+        // Fetch User Count
+        const usersResponse = await fetch('http://localhost:3001/api/users');
+        if (!usersResponse.ok) throw new Error(`HTTP error! status: ${usersResponse.status} for users`);
+        const usersData = await usersResponse.json();
+        setUserCount(usersData.length);
+
+        // Fetch Conversation Count
+        const conversationsResponse = await fetch('http://localhost:3001/api/conversations');
+        if (!conversationsResponse.ok) throw new Error(`HTTP error! status: ${conversationsResponse.status} for conversations`);
+        const conversationsData = await conversationsResponse.json();
+        setConversationCount(conversationsData.length);
+
+        // Fetch Message Count (This will fetch all messages, might be slow for large datasets)
+        // A dedicated endpoint for total message count would be more efficient.
+        const messagesResponse = await fetch('http://localhost:3001/api/messages'); // Assuming this endpoint exists and returns all messages
+        if (!messagesResponse.ok) throw new Error(`HTTP error! status: ${messagesResponse.status} for messages`);
+        const messagesData = await messagesResponse.json();
+        setMessageCount(messagesData.length);
+
       } catch (e) {
-        console.error("Failed to fetch processes:", e);
-        setError('Could not load processes. Is the backend server running?');
-        setProcesses([]); // Clear any stale data
+        console.error("Failed to fetch dashboard data:", e);
+        setError('Could not load dashboard data. Is the backend server running and database initialized?');
+        setUserCount('Error');
+        setConversationCount('Error');
+        setMessageCount('Error');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProcesses();
-  }, []); // Runs only once on component mount
-
-  const fetchProcessStatus = useCallback(async (id) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/status/${id}`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      return data.status;
-    } catch (error) {
-      console.error(`Error fetching status for ${id}:`, error);
-      return 'Unknown';
-    }
+    fetchData();
+    // Consider adding polling if these counts need to be real-time
+    // const interval = setInterval(fetchData, 10000); // Refresh every 10 seconds
+    // return () => clearInterval(interval);
   }, []);
-
-  const updateAllProcessStatuses = useCallback(async () => {
-    if (processes.length === 0) return; // Don't run if there are no processes
-    
-    const promises = processes.map(async (p) => {
-      const status = await fetchProcessStatus(p.id);
-      return { ...p, status };
-    });
-    const newProcesses = await Promise.all(promises);
-    setProcesses(newProcesses);
-  }, [processes, fetchProcessStatus]);
-
-  // Effect to periodically update statuses
-  useEffect(() => {
-    // Don't start the interval until the initial process list is loaded
-    if (!loading && processes.length > 0) {
-      updateAllProcessStatuses(); // Initial status check
-      const interval = setInterval(updateAllProcessStatuses, 5000); // Refresh every 5 seconds
-      return () => clearInterval(interval);
-    }
-  }, [loading, processes, updateAllProcessStatuses]);
-
-  const startProcess = async (id) => {
-    setProcesses(prevProcesses =>
-      prevProcesses.map(p =>
-        p.id === id ? { ...p, status: 'Starting...' } : p
-      )
-    );
-    try {
-      const response = await fetch(`${API_BASE_URL}/start/${id}`, {
-        method: 'POST',
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      console.log(data.message);
-      // After starting, immediately fetch the new status
-      const newStatus = await fetchProcessStatus(id);
-      setProcesses(prevProcesses =>
-        prevProcesses.map(p =>
-          p.id === id ? { ...p, status: newStatus } : p
-        )
-      );
-    } catch (error) {
-      console.error(`Error starting ${id}:`, error);
-      setProcesses(prevProcesses =>
-        prevProcesses.map(p =>
-          p.id === id ? { ...p, status: 'Failed to Start' } : p
-        )
-      );
-    }
-  };
-
-  const stopProcess = async (id) => {
-    setProcesses(prevProcesses =>
-      prevProcesses.map(p =>
-        p.id === id ? { ...p, status: 'Stopping...' } : p
-      )
-    );
-    try {
-      const response = await fetch(`${API_BASE_URL}/stop/${id}`, {
-        method: 'POST',
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      console.log(data.message);
-      // After stopping, immediately fetch the new status
-      const newStatus = await fetchProcessStatus(id);
-      setProcesses(prevProcesses =>
-        prevProcesses.map(p =>
-          p.id === id ? { ...p, status: newStatus } : p
-        )
-      );
-    } catch (error) {
-      console.error(`Error stopping ${id}:`, error);
-      setProcesses(prevProcesses =>
-        prevProcesses.map(p =>
-          p.id === id ? { ...p, status: 'Failed to Stop' } : p
-        )
-      );
-    }
-  };
 
   return (
     <div className="dashboard-container">
-      <h2>System Process Overview</h2>
+      <h2>Application Overview Dashboard</h2>
       <div className="dashboard-summary">
-        <p>Welcome to your comprehensive system dashboard. Here, you can monitor and manage various background processes critical to the application's operation. Keep an eye on their status and ensure everything is running smoothly.</p>
+        <p>Welcome to your application overview. This dashboard provides key insights into your application's data.</p>
       </div>
-      {loading && <p className="loading-message">Loading processes...</p>}
+
+      {loading && <p className="loading-message">Loading statistics...</p>}
       {error && <p className="error-message">{error}</p>}
       {!loading && !error && (
-        <div className="process-cards-container">
-          {processes.map(process => (
-            <ProcessCard
-              key={process.id}
-              name={process.name}
-              status={process.status}
-              onStart={() => startProcess(process.id)}
-              onStop={() => stopProcess(process.id)}
-            />
-          ))}
+        <div style={{ marginTop: '20px', padding: '15px', border: '1px solid #ccc', borderRadius: '8px' }}>
+          <h3>Summary Statistics</h3>
+          <p>Total Users: <strong>{userCount}</strong></p>
+          <p>Total Conversations: <strong>{conversationCount}</strong></p>
+          <p>Total Messages: <strong>{messageCount}</strong></p>
         </div>
       )}
-      <RecentChatsCard /> {/* Render the new RecentChatsCard component */}
+
+      <RecentChatsCard />
     </div>
   );
 };
