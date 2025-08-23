@@ -46,7 +46,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/en/2.0.0/).
 - **Frontend:** Removed `ChatMonitor` import from `App.js` as it's no longer directly rendered.
 - **Database:** Completely reset and removed the Docker-managed PostgreSQL database and its persistent data volume.
 
+## [0.5.0] - 2025-08-23
+
+### Added
+- **Backend:** Added `/api/messages/count` endpoint for retrieving total message count.
+
+### Changed
+- **Infrastructure:** Removed hardcoded `PGPASSWORD` from backend service in `docker-compose.yml` to use environment variable.
+
 ### Fixed
+- **Infrastructure:** Resolved database connection issues by ensuring correct PostgreSQL password propagation from .env to Docker Compose services.
+- **Backend:** Fixed 500 Internal Server Error on `/api/users` by adding 'role' column to the 'users' table schema.
+- **Frontend:** Corrected 404 Not Found for `/api/messages` by implementing `/api/messages/count` endpoint and updating frontend fetch logic.
 - **Backend:** Corrected `SyntaxError: Identifier 'express' has already been declared` in `webapp/server/index.js`.
 - **Backend:** Removed invalid triple quotes and duplicate `module.exports` in `webapp/server/routes.js`.
 - **Scripts:** Debugged and fixed the 'setup.bat' script to correctly handle Docker Compose checks and environment variable setup.
