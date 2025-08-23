@@ -1,8 +1,9 @@
 @echo off
 echo --- TATWATS Setup Script ---
 
-:: Check for Docker Compose
-docker-compose --version >nul 2>&1
+echo Checking for Docker Compose...
+where docker-compose >nul 2>&1
+where docker-compose >nul 2>&1
 if %errorlevel% neq 0 (
     echo Docker Compose not found. Please install Docker Desktop (which includes Docker Compose) or Docker Engine with Compose plugin.
     echo See: https://docs.docker.com/compose/install/

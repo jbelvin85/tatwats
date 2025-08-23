@@ -5,9 +5,9 @@ services:
     image: postgres:13
     restart: always
     environment:
-      POSTGRES_USER: ${PGUSER:-user}
-      POSTGRES_PASSWORD: ${PGPASSWORD:-password}
-      POSTGRES_DB: ${PGDATABASE:-tatwats_chat_db}
+      POSTGRES_USER: ${PGUSER:-podtracker_user}
+      POSTGRES_PASSWORD: ${PGPASSWORD:-changeme}
+      POSTGRES_DB: ${PGDATABASE:-podtracker_db}
     ports:
       - "5432:5432"
     volumes:
@@ -17,10 +17,9 @@ services:
     build: ./webapp/server
     ports:
       - "3001:3001"
+    env_file:
+      - ./.env
     environment:
-      PGUSER: ${PGUSER:-user}
-      PGPASSWORD: ${PGPASSWORD:-password}
-      PGDATABASE: ${PGDATABASE:-tatwats_chat_db}
       PGHOST: db # Connect to the 'db' service within the Docker network
       PGPORT: 5432
     depends_on:

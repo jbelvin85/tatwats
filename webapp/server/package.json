@@ -4,7 +4,8 @@
   "description": "Backend for helper communication management",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "db:reset": "node scripts/reset-db.js"
   },
   "keywords": [],
   "author": "",

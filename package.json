@@ -2,5 +2,18 @@
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "dotenv": "^17.2.1"
+  },
+  "devDependencies": {
+    "husky": "^8.0.0",
+    "jest": "^30.0.5",
+    "lint-staged": "^16.1.5",
+    "prettier": "^3.6.2",
+    "rimraf": "^6.0.1"
+  },
+  "scripts": {
+    "prepare": "husky install",
+    "test": "jest",
+    "clean": "rimraf node_modules package-lock.json webapp/client/node_modules webapp/client/package-lock.json webapp/server/node_modules webapp/server/package-lock.json",
+    "db:reset": "npm --prefix webapp/server run db:reset"
   }
 }

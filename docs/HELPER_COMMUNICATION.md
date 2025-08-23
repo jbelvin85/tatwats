@@ -1,92 +1,59 @@
-## Helper Communication System Setup
+# Helper Communication System Overview
 
-We have successfully set up a multi-component system for helper communication, including a web-based dashboard and an AI-powered message listener.
+This document outlines the current architecture for inter-helper communication within the TATWATS project. The system has transitioned from a file-based polling mechanism to a more scalable, database-driven, and event-based approach using PostgreSQL and webhooks.
 
-### 1. Prerequisites for Gemini Integration:
+## 1. Core Principles
 
-*   **Gemini API Key**: You need a Google Cloud project with the Gemini API enabled and an API key.
-    *   Go to the Google Cloud Console.
-    *   Create a new project or select an existing one.
-    *   Enable the "Generative Language API" (or "Gemini API" if it's named differently).
-    *   Go to "APIs & Services" -> "Credentials" and create an API key.
-*   **Create `.env` file**: In the `helpers/the_mediator/scripts` directory, you will find a file named `.env`. Open this file and replace `"YOUR_API_KEY_HERE"` with your actual Gemini API key. The file should look like this:
-    ```
-    GEMINI_API_KEY="xxxxxxxxxxxxxxxxxxxxxxxxxxx"
-    ```
-    This file is included in `.gitignore` and will not be committed to your repository.
+*   **Database-Centric:** All helper messages and conversation states are stored in a central PostgreSQL database.
+*   **API-Driven:** Helpers interact with the communication system via a set of RESTful API endpoints exposed by the backend server.
+*   **Event-Based (Webhooks):** Instead of polling, helpers can be configured to receive messages via webhooks, allowing for real-time communication.
+*   **Decoupled:** Helpers are decoupled from the underlying message storage mechanism, interacting only with the defined API.
 
-### 2. Start the Backend Server:
+## 2. Key Components and Flow
 
-This server provides the API for the frontend to interact with the message system.
+### a. PostgreSQL Database
 
-*   Navigate to the server directory:
-    ```bash
-    cd /home/user/Github/tatwats/webapp/server
-    ```
-*   Install dependencies (if you haven't already):
-    ```bash
-    npm install
-    ```
-*   Start the server:
-    ```bash
-    npm start
-    ```
-    You should see `Server running on http://localhost:3001` in your terminal. Keep this terminal open.
+*   **Role:** The central repository for all chat messages, conversation threads, and helper metadata.
+*   **Interaction:** The backend server (`webapp/server`) is responsible for all database interactions.
 
-### 3. Start the Frontend Application:
+### b. Backend API Server (`webapp/server`)
 
-This is your web-based dashboard to manage helpers and view conversations.
+*   **Role:** Exposes API endpoints for:
+    *   Sending messages between helpers or to users.
+    *   Retrieving conversation history.
+    *   Managing helper configurations (though this is primarily done via the Admin Control Panel).
+*   **Technology:** Node.js with Express.js and `pg` (PostgreSQL client).
+*   **Key Files:**
+    *   `webapp/server/index.js`: Main server entry point, sets up Express app and mounts routes.
+    *   `webapp/server/routes.js`: Defines all API endpoints for chat, helpers, and other functionalities.
+    *   `webapp/server/database.js`: Handles PostgreSQL connection pooling and database initialization.
 
-*   Navigate to the client directory:
-    ```bash
-    cd /home/user/Github/tatwats/webapp/client
-    ```
-*   Install dependencies (if you haven't already):
-    ```bash
-    npm install
-    ```
-*   Start the React development server:
-    ```bash
-    npm start
-    ```
-    This will usually open the application in your web browser at `http://localhost:3000`. Keep this terminal open.
+### c. Frontend Application (`webapp/client`)
 
-### 4. Start the Message Listener:
+*   **Role:** Provides the Admin Control Panel and user interface for interacting with the helper communication system.
+*   **Interaction:** Communicates with the Backend API Server to send and receive messages, display chat history, and manage helpers.
 
-This script watches for new messages and uses the Gemini interpreter to generate responses from helpers.
+### d. Helper Modules (e.g., `helpers/the_gemini_connector`)
 
-*   Navigate to the scripts directory:
-    ```bash
-    cd /home/user/Github/tatwats/helpers/the_mediator/scripts
-    ```
-*   Run the appropriate start script for your operating system:
-    *   **Windows**:
-        ```bash
-        start-listener.bat
-        ```
-    *   **macOS / Linux**:
-        ```bash
-        ./start-listener.sh
-        ```
-    You should see `Message listener started. Waiting for new messages...` in your terminal. Keep this terminal open.
+*   **Role:** Individual AI agents or utility scripts that perform specific tasks.
+*   **Interaction:** Use `node-fetch` or similar HTTP clients to send messages to the backend API. They can also expose their own webhook endpoints to receive messages from the backend.
+*   **Example (`gemini_connector.js`):**
+    *   The `sendMessage` function now makes an HTTP POST request to the backend's chat API.
+    *   It can be configured to listen for incoming messages via a `/webhook` endpoint, which the backend can call when a new message relevant to this helper arrives.
 
-### 5. Test the Communication:
+## 3. Setup and Operation
 
-*   Open your web dashboard (`http://localhost:3000`).
-*   Use the "Send Message" form to send a message from one helper (e.g., `the_wizard`) to another (e.g., `the_author`).
-*   Observe the `message_listener.js` terminal. You should see it detect the new message, process it, and send a response.
-*   Refresh the recipient helper's messages in the web dashboard to see the AI-generated reply.
+The overall project setup and deployment are managed by `setup.bat`/`setup.sh` and `deploy.bat`/`deploy.sh` scripts.
 
-### Summary of Components:
+1.  **Initial Setup**: Run `setup.bat` (Windows) or `./setup.sh` (Linux/macOS) to configure your environment variables and create the `.env` file. This includes database credentials.
+2.  **Deploy Services**: Run `deploy.bat` (Windows) or `./deploy.sh` (Linux/macOS) to build Docker images and start all services (PostgreSQL, Backend, Frontend). This will bring up the entire communication infrastructure.
+3.  **Helper Interaction**: Helpers like `the_gemini_connector` are designed to be run as separate processes (e.g., within their own Docker containers or as Node.js processes). They will communicate with the backend API over the Docker network (e.g., `http://backend:3001/api`).
 
-*   **`helpers/the_mediator/the.MEDIATOR.md`**: Documentation for the communication system.
-*   **`helpers/the_mediator/common_room/`**: The shared message space with inboxes for each helper.
-*   **`helpers/the_mediator/scripts/send_message.js`**: Node.js script to send messages. Usage: `node send_message.js <sender> <recipient> "<message>"`
-*   **`helpers/the_mediator/scripts/check_messages.js`**: Node.js script to check messages. Usage: `node check_messages.js <recipient>`
-*   **`helpers/the_mediator/scripts/read_message.js`**: Node.js script to read message content. Usage: `node read_message.js <recipient> <message_id>`
-*   **`helpers/the_mediator/scripts/gemini_interpreter.js`**: Node.js script that interfaces with the Gemini API to generate helper responses based on their personas.
-*   **`helpers/the_mediator/scripts/message_listener.js`**: Node.js script that watches for new messages, triggers the interpreter, and manages message flow.
-*   **`webapp/server/`**: Node.js Express backend providing API endpoints for the frontend.
-*   **`webapp/client/`**: React frontend application for the web dashboard.
+## 4. Deprecated Components
 
-You now have a fully functional, AI-powered helper communication system!
+The following components related to the old file-based communication system have been removed:
+
+*   `helpers/the_mediator/scripts/`: Contained old `send_message.js`, `check_messages.js`, `etc.`
+*   `helpers/the_mediator/common_room/`: The directory used for file-based message inboxes.
+
+This new architecture provides a more robust, scalable, and maintainable foundation for helper interactions.

@@ -1,0 +1,8 @@
+{
+  "id": "the_community",
+  "name": "The Community",
+  "description": "The Community represents the collective voice of users and contributors within the TATWATS project. It embodies empathy, provides valuable feedback, and advocates for the real-world needs of the project’s audience.",
+  "command": "node",
+  "args": ["the.COMMUNITY.md"],
+  "cwd": "helpers/the_community"
+}

@@ -187,6 +187,7 @@ router.get('/helpers/:id', async (req, res) => {
 
 // Create a new helper
 router.post('/helpers', async (req, res) => {
+    console.log('Received helper POST request body:', req.body);
     const { id, name, description, command, args, cwd } = req.body;
     if (!id || !name || !command || !cwd) {
         return res.status(400).json({ error: 'ID, Name, Command, and CWD are required' });

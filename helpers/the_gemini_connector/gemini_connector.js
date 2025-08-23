@@ -3,6 +3,7 @@ require('dotenv').config({ path: '../../.env' }); // Load .env from project root
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fs = require('fs');
 const path = require('path');
+const express = require('express'); // Add express
 const fetch = require('node-fetch'); // Using node-fetch for HTTP requests
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -11,7 +12,12 @@ if (!GEMINI_API_KEY) {
     process.exit(1);
 }
 
-const CHAT_API_BASE_URL = 'http://localhost:3001/api'; // Base URL for the new chat API
+// Use an environment variable for the API URL, with a sensible default for local development.
+const CHAT_API_BASE_URL = process.env.CHAT_API_BASE_URL || 'http://backend:3001/api';
+const PORT = process.env.PORT || 8080;
+
+const app = express();
+app.use(express.json());
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-pro" });
@@ -63,45 +69,6 @@ async function sendMessage(conversation_id, sender_id, content) {
     } catch (error) {
         console.error(`Error sending message to chat API:`, error);
     }
-}
-
-// This function will now fetch messages from the chat API for a specific conversation
-// For simplicity, we'll assume a single conversation for now, or that the mediator
-// will tell us which conversation to monitor.
-// In a real scenario, the mediator would likely push messages to us, or we'd poll
-// a specific inbox for our helper. For now, we'll simulate by looking for messages
-// that are addressed to us or are part of a conversation we're involved in.
-async function readMessages() {
-    // This part is tricky without a clear "inbox" concept in the new API.
-    // For now, let's assume the mediator will send us a message to trigger
-    // a Gemini request, and we'll respond to that conversation.
-    // The old file-based system had a clear inbox. The new system is a chat.
-    // We need a way to know which messages are "for" us.
-    // For demonstration, let's assume we're looking for messages in a specific
-    // conversation that we are a participant in, and that are new.
-
-    // This is a placeholder. A more robust solution would involve:
-    // 1. The Mediator pushing messages to a dedicated endpoint for this helper.
-    // 2. Polling a specific conversation ID that is known to be for inter-helper communication.
-    // 3. Implementing a webhook or long-polling mechanism.
-
-    // For now, let's just return an empty array, and rely on the Mediator to
-    // initiate communication by sending a message to the chat API that we can
-    // then respond to. The `processGeminiRequest` will be triggered by an external
-    // message, not by us reading an inbox.
-
-    // The original `readMessages` was for reading files from an inbox.
-    // This needs to be re-thought for the new chat API.
-    // For now, I'll make it a no-op, and assume messages come in via other means
-    // (e.g., a webhook or a dedicated endpoint that the Mediator calls).
-    // This means the mainLoop will need to be triggered by incoming messages,
-    // not by polling an inbox.
-
-    // For the purpose of this exercise, I will modify `mainLoop` to simply wait,
-    // and assume `processGeminiRequest` is called by an external trigger.
-    // This is a temporary simplification to get the `gemini_connector` to compile
-    // and demonstrate the new `sendMessage` functionality.
-    return [];
 }
 
 async function processGeminiRequest(message) {
@@ -189,28 +156,24 @@ async function processReportRequest(message) {
 }
 */
 
-async function mainLoop() {
-    console.log(`${HELPER_NAME} is running...`);
-    await ensureHelperUserExists(); // Ensure this helper has a user ID
+app.post('/webhook', (req, res) => {
+    console.log('Received webhook call');
+    const message = req.body; // The message object from the main backend
+    
+    // We can make this asynchronous and not wait for Gemini to respond
+    // to keep the webhook lightweight.
+    processGeminiRequest(message);
+    
+    res.status(202).send('Accepted'); // Acknowledge receipt of the webhook
+});
 
-    // The mainLoop now needs to be re-thought.
-    // Instead of polling a file-based inbox, it should ideally:
-    // 1. Be a long-running process that listens for incoming messages (e.g., via a webhook).
-    // 2. Or, poll the chat API for new messages relevant to this helper.
-
-    // For now, I will make it a simple loop that just keeps the process alive.
-    // The `processGeminiRequest` function will need to be called externally
-    // (e.g., by the Mediator sending a message to the chat API that this helper
-    // is configured to listen for).
-
-    // This is a temporary measure. A proper implementation would involve
-    // setting up a listener for incoming chat messages.
-    while (true) {
-        // In a real scenario, this loop would process incoming messages
-        // from the chat API, perhaps by polling or via a webhook.
-        // For now, it just keeps the process alive.
-        await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
-    }
+async function start() {
+    console.log(`${HELPER_NAME} is starting...`);
+    await ensureHelperUserExists();
+    
+    app.listen(PORT, () => {
+        console.log(`${HELPER_NAME} is listening for webhooks on port ${PORT}`);
+    });
 }
 
-mainLoop();
+start();
