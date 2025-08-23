@@ -142,3 +142,19 @@ Our immediate focus is to fully integrate helper communication through the new c
 *   **Define Communication Workflows:** Clearly outline how helpers will initiate communication and how Gemini will respond.
 *   **Error Handling and Logging:** Implement robust error handling and logging for all communication within this integrated system.
 
+---
+
+## 5. Testing Strategy
+
+To ensure the reliability and integrity of the TATWATS project, a comprehensive testing strategy will be implemented, with a particular focus on the database layer.
+
+### a. Database Integration Tests
+
+*   **Purpose:** Validate the correct interaction between the application's backend and the PostgreSQL database, ensuring data persistence, integrity, and accurate CRUD operations.
+*   **Scope:**
+    *   **Connection Verification:** Confirm successful connection to the database.
+    *   **Schema Validation:** Programmatically verify the existence and structure of critical tables (e.g., `messages`, `helpers`).
+    *   **CRUD Operations:** Test Create, Read, Update, and Delete functionalities for key data entities.
+*   **Environment:** Tests will be executed against a clean, isolated database instance, typically managed via Docker Compose, with automated setup and teardown for each test run.
+*   **Responsibility:** The implementation and maintenance of these tests will be handled by **The Tester** persona.
+
