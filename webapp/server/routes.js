@@ -19,7 +19,7 @@ router.post('/users', async (req, res) => {
 // Get all users
 router.get('/users', async (req, res) => {
     try {
-        const result = await db.query('SELECT id, name FROM users');
+        const result = await db.query('SELECT id, name, role FROM users');
         res.json(result.rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -43,12 +43,33 @@ router.get('/users/:id', async (req, res) => {
 // Update a user by ID
 router.put('/users/:id', async (req, res) => {
     const { id } = req.params;
-    const { name } = req.body; // Assuming only name can be updated for now
-    if (!name) {
-        return res.status(400).json({ error: 'User name is required' });
+    const { name, role } = req.body; // Now accepting role
+    
+    // Build the SET clause dynamically based on what's provided
+    const updates = [];
+    const values = [];
+    let paramIndex = 1;
+
+    if (name !== undefined) {
+        updates.push(`name = ${paramIndex++}`);
+        values.push(name);
     }
+    if (role !== undefined) {
+        updates.push(`role = ${paramIndex++}`);
+        values.push(role);
+    }
+
+    if (updates.length === 0) {
+        return res.status(400).json({ error: 'No fields to update provided' });
+    }
+
+    values.push(id); // Add id as the last parameter
+
     try {
-        const result = await db.query('UPDATE users SET name = $1 WHERE id = $2 RETURNING id, name', [name, id]);
+        const result = await db.query(
+            `UPDATE users SET ${updates.join(', ')} WHERE id = ${paramIndex} RETURNING id, name, role`,
+            values
+        );
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'User not found' });
         }
@@ -151,6 +172,16 @@ router.post('/messages', async (req, res) => {
     try {
         const result = await db.query('INSERT INTO messages (conversation_id, sender_id, content) VALUES ($1, $2, $3) RETURNING id', [conversation_id, sender_id, content]);
         res.status(201).json({ id: result.rows[0].id, conversation_id, sender_id, content });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get total message count for statistics
+router.get('/messages/count', async (req, res) => {
+    try {
+        const result = await db.query('SELECT COUNT(*) FROM messages');
+        res.json({ count: parseInt(result.rows[0].count) });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
