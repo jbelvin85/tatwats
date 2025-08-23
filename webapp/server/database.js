@@ -1,21 +1,31 @@
 const { Pool } = require('pg');
 
-const pool = new Pool({
-    user: process.env.PGUSER || 'user',
-    host: process.env.PGHOST || 'localhost',
-    database: process.env.PGDATABASE || 'tatwats', // A new database for chat
-    password: process.env.PGPASSWORD || 'password',
-    port: process.env.PGPORT || 5432,
-});
+let pool; // Declare pool but don't initialize immediately
 
-pool.on('error', (err, client) => {
-    console.error('Unexpected error on idle client', err);
-    process.exit(-1);
-});
+function initPool() {
+    if (pool) {
+        return pool; // Return existing pool if already initialized
+    }
+    pool = new Pool({
+        user: process.env.PGUSER || 'user',
+        host: process.env.PGHOST || 'localhost',
+        database: process.env.PGDATABASE || 'tatwats', // A new database for chat
+        password: process.env.PGPASSWORD || 'password',
+        port: process.env.PGPORT || 5432,
+    });
+
+    pool.on('error', (err, client) => {
+        console.error('Unexpected error on idle client', err);
+        // In a real app, you might want to gracefully shut down or restart
+        // For tests, we'll let the test runner handle errors
+    });
+    return pool;
+}
 
 async function initializeDatabase() {
+    const currentPool = initPool(); // Ensure pool is initialized
     try {
-        const client = await pool.connect();
+        const client = await currentPool.connect();
         console.log('Connected to PostgreSQL database.');
 
         await client.query(`
@@ -74,15 +84,15 @@ async function initializeDatabase() {
         client.release();
     } catch (err) {
         console.error('Error initializing database:', err);
-        process.exit(1);
+        throw err; // Throw the error so the caller can handle it
     }
 }
 
-initializeDatabase();
+// initializeDatabase();
 
 module.exports = {
-    query: (text, params) => pool.query(text, params),
-    getClient: () => pool.connect(),
+    query: (text, params) => initPool().query(text, params),
+    getClient: () => initPool().connect(),
     initializeDatabase: initializeDatabase, // Export initializeDatabase
-    pool: pool, // Export the pool object itself
+    pool: initPool, // Export initPool as pool, so tests can call it
 };

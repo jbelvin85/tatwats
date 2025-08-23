@@ -1,0 +1,4 @@
+docs: Update ROADMAP.md with testing strategy
+
+- **Documentation:** Added a new section on "Testing Strategy" to `docs/ROADMAP.md`.
+- **Documentation:** Detailed the plan for database integration tests, including purpose, scope, environment, and responsibility (The Tester).

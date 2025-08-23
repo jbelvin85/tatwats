@@ -13,6 +13,19 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
 
+  # New service for the test database
+  test_db:
+    image: postgres:13
+    restart: "no" # We want to control its lifecycle manually for tests
+    environment:
+      POSTGRES_USER: ${PGTEST_USER:-test_user}
+      POSTGRES_PASSWORD: ${PGTEST_PASSWORD:-test_password}
+      POSTGRES_DB: ${PGTEST_DATABASE:-test_db}
+    ports:
+      - "5433:5432" # Map to a different host port
+    volumes:
+      - test_db_data:/var/lib/postgresql/data
+
   backend:
     build: ./webapp/server
     ports:
@@ -20,10 +33,14 @@ services:
     env_file:
       - ./.env
     environment:
-      PGHOST: db # Connect to the 'db' service within the Docker network
+      PGHOST: db # Default to development db
       PGPORT: 5432
+      # Add test specific environment variables that can override defaults
+      PGTEST_HOST: test_db # Connect to the 'test_db' service within the Docker network
+      PGTEST_PORT: 5432 # Internal Docker port
     depends_on:
       - db
+      - test_db # Backend now depends on both dbs, but will connect based on env vars
     restart: always
 
   frontend:
@@ -36,3 +53,5 @@ services:
 
 volumes:
   db_data:
+  # New volume for the test database
+  test_db_data:

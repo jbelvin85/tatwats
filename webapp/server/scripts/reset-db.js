@@ -4,11 +4,11 @@ require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const { Client } = require('pg');
 
-const { DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME } = process.env;
+const { PGUSER, PGPASSWORD, PGHOST, PGPORT, PGDATABASE } = process.env;
 
-if (!DB_USER || !DB_PASSWORD || !DB_HOST || !DB_PORT || !DB_NAME) {
-  console.error('❌ Error: Missing required database environment variables.');
-  console.error('   Please ensure DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, and DB_NAME are set in your .env file.');
+if (!PGUSER || !PGPASSWORD || !PGHOST || !PGPORT || !PGDATABASE) {
+  console.error('❌ Error: Missing required PostgreSQL environment variables.');
+  console.error('   Please ensure PGUSER, PGPASSWORD, PGHOST, PGPORT, and PGDATABASE are set in your .env file or environment.');
   process.exit(1);
 }
 
