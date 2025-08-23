@@ -9,8 +9,8 @@ GEMINI_API_KEY="YOUR_GEMINI_API_KEY_HERE"
 TATWATS_USERNAME="YOUR_GENERATED_USERNAME"
 TATWATS_PASSWORD="YOUR_GENERATED_PASSWORD"
 PGHOST=localhost
-PGUSER=postgres
-PGPASSWORD=your_postgres_password
+PGUSER=podtracker_user  # Changed from postgres
+PGPASSWORD=changeme    # Changed from your_postgres_password
 PGDATABASE=tatwats
 PGPORT=5432
 EOF

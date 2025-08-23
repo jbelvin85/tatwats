@@ -8,8 +8,8 @@ echo Creating .env file with placeholder values...
     echo TATWATS_USERNAME="YOUR_GENERATED_USERNAME"
     echo TATWATS_PASSWORD="YOUR_GENERATED_PASSWORD"
     echo PGHOST=localhost
-    echo PGUSER=postgres
-    echo PGPASSWORD=your_postgres_password
+    echo PGUSER=podtracker_user  REM Changed from postgres
+    echo PGPASSWORD=changeme    REM Changed from your_postgres_password
     echo PGDATABASE=tatwats
     echo PGPORT=5432
 ) > .env

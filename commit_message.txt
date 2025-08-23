@@ -1,6 +1,4 @@
-refactor(frontend): Combine HomePage and Dashboard into AdminDashboard
+chore(frontend): Remove obsolete Process Management page and link
 
-- **Frontend:** Renamed `HomePage.js` to `AdminDashboard.js` to serve as the central Admin Control Panel.
-- **Frontend:** Consolidated backend server status and application statistics (users, conversations, messages) into `AdminDashboard.js`.
-- **Frontend:** Updated `App.js` to route the root path (`/`) to the new `AdminDashboard.js`.
-- **Frontend:** Deleted the redundant `Dashboard.js` file.
+- **Frontend:** Removed the `/processes` route from `App.js` as its functionality has been integrated into `AdminDashboard.js`.
+- **Frontend:** Removed the "Process Management" link from `Header.js` to reflect the updated navigation.
