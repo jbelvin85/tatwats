@@ -12,11 +12,6 @@ services:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U podtracker_user -d postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
 
   # New service for the test database
   test_db:
@@ -40,16 +35,13 @@ services:
     environment:
       PGHOST: db # Default to development db
       PGPORT: 5432
-      PGUSER: podtracker_user
       # Add test specific environment variables that can override defaults
       PGTEST_HOST: test_db # Connect to the 'test_db' service within the Docker network
       PGTEST_PORT: 5432 # Internal Docker port
     depends_on:
-      db:
-        condition: service_healthy
-      test_db: # Backend now depends on both dbs, but will connect based on env vars
-        condition: service_started
-    restart: "no"
+      - db
+      - test_db # Backend now depends on both dbs, but will connect based on env vars
+    restart: always
 
   frontend:
     build: ./webapp/client

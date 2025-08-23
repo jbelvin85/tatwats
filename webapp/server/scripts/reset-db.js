@@ -1,6 +1,6 @@
 const path = require('path');
 // Load environment variables from .env file in the parent directory
-require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') });
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const { Client } = require('pg');
 
@@ -29,7 +29,6 @@ async function initializeDatabase() {
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
                 name TEXT NOT NULL UNIQUE,
-                role TEXT DEFAULT 'user',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `);
