@@ -62,7 +62,7 @@ function AdminDashboard() {
 
       } catch (e) {
         console.error("Failed to fetch application statistics:", e);
-        setError('Could not load application statistics. Is the backend server running and database initialized?');
+        setAppStatsError('Could not load application statistics. Is the backend server running and database initialized?'); // Corrected
         setUserCount('Error');
         setConversationCount('Error');
         setMessageCount('Error');

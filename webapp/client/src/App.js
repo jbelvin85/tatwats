@@ -3,17 +3,13 @@ import UserManagement from './UserManagement'; // Import the new UserManagement 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
-import Dashboard from './Dashboard';
-
-import HelperAdmin from './HelperAdmin';
-import Header from './Header';
-import ChatApp from './ChatApp';
+// import Dashboard from './Dashboard'; // REMOVE THIS LINE
 import AdminDashboard from './AdminDashboard'; // New import for the renamed component
 
 import HelperAdmin from './HelperAdmin';
 import Header from './Header';
 import ChatApp from './ChatApp';
-// import HomePage from './HomePage'; // Remove this import
+// import HomePage from './HomePage'; // This was already commented out, keep it that way
 
 function App() {
   return (
@@ -23,7 +19,6 @@ function App() {
         <main>
           <Routes>
             <Route path="/" element={<AdminDashboard />} /> {/* Use AdminDashboard for the root path */}
-            <Route path="/processes" element={<Dashboard />} /> {/* This route will be removed later */}
             <Route path="/helpers" element={<HelperAdmin />} />
             <Route path="/chat" element={<ChatApp />} />
             <Route path="/users" element={<UserManagement />} /> {/* New route for User Management */}

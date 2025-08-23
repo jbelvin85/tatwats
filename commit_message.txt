@@ -1,5 +1,6 @@
-refactor(frontend): Re-purpose Dashboard.js for application overview
+refactor(frontend): Combine HomePage and Dashboard into AdminDashboard
 
-- **Frontend:** Refactored `Dashboard.js` to display application-level statistics (users, conversations, messages) fetched from the database.
-- **Frontend:** Removed outdated process management logic and associated API calls from `Dashboard.js`.
-- **Frontend:** Integrated `RecentChatsCard.js` for displaying recent conversations.
+- **Frontend:** Renamed `HomePage.js` to `AdminDashboard.js` to serve as the central Admin Control Panel.
+- **Frontend:** Consolidated backend server status and application statistics (users, conversations, messages) into `AdminDashboard.js`.
+- **Frontend:** Updated `App.js` to route the root path (`/`) to the new `AdminDashboard.js`.
+- **Frontend:** Deleted the redundant `Dashboard.js` file.

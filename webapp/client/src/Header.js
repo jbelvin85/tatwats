@@ -8,7 +8,6 @@ function Header() {
       <nav>
         <ul>
           <li><Link to="/">Home</Link></li>
-          <li><Link to="/processes">Process Management</Link></li>
           <li><Link to="/helpers">Helper Admin</Link></li>
           <li><Link to="/chat">Chat</Link></li>
           <li><Link to="/users">User Management</Link></li> {/* New link for User Management */}
