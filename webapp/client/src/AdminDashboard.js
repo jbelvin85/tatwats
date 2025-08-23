@@ -55,10 +55,10 @@ function AdminDashboard() {
         setConversationCount(conversationsData.length);
 
         // Fetch Message Count
-        const messagesResponse = await fetch('http://localhost:3001/api/messages');
+        const messagesResponse = await fetch('http://localhost:3001/api/messages/count');
         if (!messagesResponse.ok) throw new Error(`HTTP error! status: ${messagesResponse.status} for messages`);
         const messagesData = await messagesResponse.json();
-        setMessageCount(messagesData.length);
+        setMessageCount(messagesData.count);
 
       } catch (e) {
         console.error("Failed to fetch application statistics:", e);
