@@ -1,4 +1,5 @@
-docs: Update ROADMAP.md with testing strategy
+refactor(frontend): Re-purpose Dashboard.js for application overview
 
-- **Documentation:** Added a new section on "Testing Strategy" to `docs/ROADMAP.md`.
-- **Documentation:** Detailed the plan for database integration tests, including purpose, scope, environment, and responsibility (The Tester).
+- **Frontend:** Refactored `Dashboard.js` to display application-level statistics (users, conversations, messages) fetched from the database.
+- **Frontend:** Removed outdated process management logic and associated API calls from `Dashboard.js`.
+- **Frontend:** Integrated `RecentChatsCard.js` for displaying recent conversations.
