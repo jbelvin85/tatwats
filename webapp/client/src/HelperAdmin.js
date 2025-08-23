@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import './HelperAdmin.css';
 
 const API_URL = '/api/helpers';
 
 // A reusable form for both creating and editing helpers
-const HelperForm = ({ helper, onSave, onCancel }) => {
+const HelperForm = ({ helper, onSave, onCancel, formError }) => {
   const [formData, setFormData] = useState({
     id: '',
     name: '',
     description: '',
     command: '',
-    args: '[]', // Store args as a JSON string in the form
+    core_args: '[]',
+    user_args: '[]',
     cwd: ''
   });
 
@@ -17,11 +19,12 @@ const HelperForm = ({ helper, onSave, onCancel }) => {
     if (helper) {
       setFormData({
         ...helper,
-        args: JSON.stringify(helper.args || [], null, 2) // Pretty print JSON for editing
+        core_args: JSON.stringify(helper.core_args || [], null, 2),
+        user_args: JSON.stringify(helper.user_args || [], null, 2)
       });
     } else {
       // Reset for new helper form
-      setFormData({ id: '', name: '', description: '', command: '', args: '[]', cwd: '' });
+      setFormData({ id: '', name: '', description: '', command: '', core_args: '[]', user_args: '[]', cwd: '' });
     }
   }, [helper]);
 
@@ -33,25 +36,39 @@ const HelperForm = ({ helper, onSave, onCancel }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     try {
-      // Validate and parse the JSON arguments before saving
-      const parsedArgs = JSON.parse(formData.args);
-      onSave({ ...formData, args: parsedArgs });
+      const parsedCoreArgs = JSON.parse(formData.core_args);
+      const parsedUserArgs = JSON.parse(formData.user_args);
+      onSave({ ...formData, core_args: parsedCoreArgs, user_args: parsedUserArgs });
     } catch (error) {
-      alert('Error: "Args" field must contain valid JSON.');
+      onSave(null, 'Error: "Core Directives" and "User Directives" fields must contain valid JSON arrays.');
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="helper-form">
+    <form onSubmit={handleSubmit} className="helper-form-container">
+      <label>ID:</label>
       <input name="id" value={formData.id} onChange={handleChange} placeholder="ID (e.g., 'the_architect')" required disabled={!!helper} />
+      <label>Name:</label>
       <input name="name" value={formData.name} onChange={handleChange} placeholder="Name (e.g., 'The Architect')" required />
+      <label>Description:</label>
       <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Description" />
+      <label>Command:</label>
       <input name="command" value={formData.command} onChange={handleChange} placeholder="Command (e.g., 'node')" required />
-      <textarea name="args" value={formData.args} onChange={handleChange} placeholder='Args (JSON array, e.g., ["script.js"])' required />
+      
+      {/* Display core_args as read-only */}
+      <label>Core Directives (Read-Only):</label>
+      <textarea name="core_args" value={formData.core_args} readOnly disabled />
+
+      {/* Allow editing user_args */}
+      <label>User Directives (Editable):</label>
+      <textarea name="user_args" value={formData.user_args} onChange={handleChange} placeholder='User Directives (JSON array, e.g., ["--verbose"])' />
+      
+      <label>Working Directory:</label>
       <input name="cwd" value={formData.cwd} onChange={handleChange} placeholder="Working Directory (e.g., 'helpers/the_architect')" required />
       <div className="form-actions">
         <button type="submit">Save</button>
         <button type="button" onClick={onCancel}>Cancel</button>
+        {formError && <p className="form-error">{formError}</p>}
       </div>
     </form>
   );
@@ -59,9 +76,11 @@ const HelperForm = ({ helper, onSave, onCancel }) => {
 
 function HelperAdmin() {
   const [helpers, setHelpers] = useState([]);
-  const [editingHelper, setEditingHelper] = useState(null); // Can be a helper object or `true` for a new one
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedHelper, setSelectedHelper] = useState(null); // null for new, object for edit
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [pageError, setPageError] = useState(null); // For page-level errors
+  const [formError, setFormError] = useState(null); // For form-specific errors
 
   const fetchHelpers = useCallback(async () => {
     try {
@@ -71,7 +90,7 @@ function HelperAdmin() {
       const data = await response.json();
       setHelpers(data);
     } catch (e) {
-      setError(`Failed to load helpers: ${e.message}`);
+      setPageError(`Failed to load helpers: ${e.message}`);
     } finally {
       setLoading(false);
     }
@@ -81,8 +100,14 @@ function HelperAdmin() {
     fetchHelpers();
   }, [fetchHelpers]);
 
-  const handleSave = async (helperData) => {
-    const isNew = !helperData.id || !helpers.some(h => h.id === helperData.id);
+  const handleSave = async (helperData, error) => {
+    setFormError(null); // Clear previous errors
+    if (error) {
+      setFormError(error);
+      return;
+    }
+
+    const isNew = !selectedHelper;
     const url = isNew ? API_URL : `${API_URL}/${helperData.id}`;
     const method = isNew ? 'POST' : 'PUT';
 
@@ -93,10 +118,11 @@ function HelperAdmin() {
         body: JSON.stringify(helperData),
       });
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      setEditingHelper(null);
+      setIsFormOpen(false); // Close form modal
+      setSelectedHelper(null);
       fetchHelpers(); // Refresh list
     } catch (e) {
-      alert(`Failed to save helper: ${e.message}`);
+      setFormError(`Failed to save helper: ${e.message}`);
     }
   };
 
@@ -109,40 +135,75 @@ function HelperAdmin() {
         }
         fetchHelpers(); // Refresh list
       } catch (e) {
-        alert(`Failed to delete helper: ${e.message}`);
+        setPageError(`Failed to delete helper: ${e.message}`); // Show as page error
       }
     }
+  };
+
+  const handleAddNew = () => {
+    setSelectedHelper(null);
+    setFormError(null);
+    setIsFormOpen(true);
+  };
+
+  const handleEdit = (helper) => {
+    setSelectedHelper(helper);
+    setFormError(null);
+    setIsFormOpen(true);
+  };
+
+  const handleCancel = () => {
+    setIsFormOpen(false);
+    setSelectedHelper(null);
+    setFormError(null);
   };
 
   return (
     <div className="helper-admin-container">
       <h2>Helpers Management</h2>
       {loading && <p>Loading...</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {pageError && <p className="page-error">{pageError}</p>}
       
-      {!loading && !error && (
+      {!loading && !pageError && (
         <>
-          {editingHelper ? (
-            <HelperForm 
-              helper={editingHelper === true ? null : editingHelper} 
-              onSave={handleSave} 
-              onCancel={() => setEditingHelper(null)} 
-            />
-          ) : (
-            <button onClick={() => setEditingHelper(true)}>Add New Helper</button>
-          )}
+          <div className="toolbar">
+            <button onClick={handleAddNew}>Add New Helper</button>
+          </div>
 
-          <ul className="helper-list">
-            {helpers.map((helper) => (
-              <li key={helper.id} className="helper-item">
-                <span><strong>{helper.name}</strong> ({helper.id})</span>
-                <div className="item-actions">
-                  <button onClick={() => setEditingHelper(helper)}>Edit</button>
-                  <button onClick={() => handleDelete(helper.id)}>Delete</button>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <table className="helpers-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>ID</th>
+                <th>Description</th>
+                <th>Command</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {helpers.map((helper) => (
+                <tr key={helper.id}>
+                  <td>{helper.name}</td>
+                  <td>{helper.id}</td>
+                  <td>{helper.description}</td>
+                  <td>{`${helper.command} ${helper.core_args.join(' ')} ${helper.user_args.join(' ')}`}</td>
+                  <td className="actions-cell">
+                    <button onClick={() => handleEdit(helper)}>Edit</button>
+                    <button onClick={() => handleDelete(helper.id)} className="delete-button">Delete</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {isFormOpen && (
+            <div className="modal-backdrop">
+              <div className="modal-content">
+                <h3>{selectedHelper ? 'Edit Helper' : 'Add New Helper'}</h3>
+                <HelperForm helper={selectedHelper} onSave={handleSave} onCancel={handleCancel} formError={formError} />
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

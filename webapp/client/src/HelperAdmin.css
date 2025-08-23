@@ -1,0 +1,146 @@
+/* Suggested for src/HelperAdmin.css */
+
+.helper-admin-container {
+  padding: 2rem;
+  font-family: sans-serif;
+}
+
+.toolbar {
+  margin-bottom: 1rem;
+}
+
+.toolbar button {
+  padding: 0.5rem 1rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.toolbar button:hover {
+  background-color: #0056b3;
+}
+
+.helpers-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.helpers-table th, .helpers-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.helpers-table th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+.helpers-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.helpers-table tr:hover {
+  background-color: #f1f1f1;
+}
+
+.actions-cell {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.actions-cell button {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.actions-cell .delete-button {
+  background-color: #dc3545;
+  color: white;
+  border-color: #dc3545;
+}
+.actions-cell .delete-button:hover {
+  background-color: #c82333;
+}
+
+/* Modal Styles */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 600px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* Form Styles */
+.helper-form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.helper-form-container label {
+  font-weight: bold;
+}
+
+.helper-form-container input,
+.helper-form-container textarea {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.helper-form-container textarea {
+  min-height: 80px;
+  font-family: monospace;
+}
+
+.form-actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.form-actions button {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.form-actions button[type="submit"] {
+  background-color: #28a745;
+  color: white;
+  border: none;
+}
+.form-actions button[type="button"] {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+}
+
+.page-error, .form-error {
+  color: #dc3545;
+  font-weight: bold;
+  margin-top: 1rem;
+}

@@ -32,6 +32,7 @@ async function initializeDatabase() {
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
                 name TEXT NOT NULL UNIQUE,
+                role TEXT DEFAULT 'user',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `);
@@ -74,7 +75,8 @@ async function initializeDatabase() {
                 name TEXT NOT NULL UNIQUE,
                 description TEXT,
                 command TEXT NOT NULL,
-                args JSONB, -- Store arguments as JSONB
+                core_args JSONB DEFAULT '[]',
+                user_args JSONB DEFAULT '[]',
                 cwd TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
