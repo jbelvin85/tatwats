@@ -29,6 +29,7 @@ async function initializeDatabase() {
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
                 name TEXT NOT NULL UNIQUE,
+                role TEXT DEFAULT 'user',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `);
@@ -71,7 +72,8 @@ async function initializeDatabase() {
                 name TEXT NOT NULL UNIQUE,
                 description TEXT,
                 command TEXT NOT NULL,
-                args JSONB, -- Store arguments as JSONB
+                core_args JSONB, -- Store core arguments as JSONB
+                user_args JSONB DEFAULT '[]', -- Store user-added arguments as JSONB
                 cwd TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
@@ -79,7 +81,7 @@ async function initializeDatabase() {
 
         console.log('Database schema created or updated.');
     } catch (err) {
-        console.error('Error initializing database schema:', err);
+        console.error('Error initializing database schema:', err.stack);
         throw err;
     } finally {
         await pool.end();
@@ -138,6 +140,50 @@ async function seedDatabase() {
             [generalChatId, defaultUserId]
         );
         console.log(`  - Default user added to 'General Chat'.`);
+
+        // Insert default helpers
+        const helpersToInsert = [
+            {
+                id: 'the_architect',
+                name: 'The Architect',
+                description: 'A visionary systems thinker who ensures the tatwats project’s long-term scalability, modularity, and maintainability.',
+                command: 'node',
+                core_args: ['helpers/the_architect/the.ARCHITECT.js'],
+                cwd: 'd:/GitHub/tatwats' // Assuming this is the project root
+            },
+            {
+                id: 'the_author',
+                name: 'The Author',
+                description: 'A meticulous writer responsible for crafting clear, concise, and comprehensive documentation.',
+                command: 'node',
+                core_args: ['helpers/the_author/the.AUTHOR.js'],
+                cwd: 'd:/GitHub/tatwats'
+            },
+            {
+                id: 'the_keeper',
+                name: 'The Keeper',
+                description: 'A meticulous steward who ensures that every decision, definition, and change in the tatwats project is properly recorded, preserved, and easy to reference.',
+                command: 'node',
+                core_args: ['helpers/the_keeper/the.KEEPER.js'],
+                cwd: 'd:/GitHub/tatwats'
+            },
+            {
+                id: 'the_tester',
+                name: 'The Tester',
+                description: 'A rigorous quality assurance specialist who designs, executes, and automates tests to ensure the reliability and robustness of the tatwats project.',
+                command: 'node',
+                core_args: ['helpers/the_tester/the.TESTER.js'],
+                cwd: 'd:/GitHub/tatwats'
+            }
+        ];
+
+        for (const helper of helpersToInsert) {
+            await pool.query(
+                'INSERT INTO helpers (id, name, description, command, core_args, user_args, cwd) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, description = EXCLUDED.description, command = EXCLUDED.command, core_args = EXCLUDED.core_args, user_args = EXCLUDED.user_args, cwd = EXCLUDED.cwd',
+                [helper.id, helper.name, helper.description, helper.command, JSON.stringify(helper.core_args), '[]', helper.cwd]
+            );
+            console.log(`  - Helper '${helper.name}' (${helper.id}) seeded.`);
+        }
 
         console.log('Database seeding complete.');
     } catch (err) {

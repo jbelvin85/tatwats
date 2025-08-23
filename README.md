@@ -34,7 +34,7 @@ Traditional projects often leave documentation as an afterthought, leading to co
 
 ## 🛠️ Tech Stack
 
-- **Frontend:** React + TailwindCSS + ShadCN  
+- **Frontend:** React + TailwindCSS
 - **Backend:** Node.js + Prisma ORM  
 - **Database:** PostgreSQL  
 - **Containerization:** Docker & Docker Compose  
@@ -45,17 +45,21 @@ Traditional projects often leave documentation as an afterthought, leading to co
 
 ## 📚 Getting Started
 
-1. **Clone the Repository**  
+1. **Clone the Repository**
 ```bash
 git clone https://github.com/your-org/tatwats.git
 cd tatwats
-Install Dependencies
+```
 
-bash
-Copy
-Edit
-npm install
-Set Up Environment Variables
+2. **Install Dependencies**
+```bash
+# From the root directory
+cd webapp/client && npm install
+cd ../server && npm install
+cd ../.. 
+```
+
+3. **Set Up Environment Variables**
 
 This project uses environment variables to manage sensitive information and configuration.
 
@@ -90,7 +94,7 @@ To start the application, run the deploy script:
     ```bash
     ./deploy.sh
     ```
-This will build the Docker images, set up the necessary environment variables (if not already done), and start all services.
+This will build the Docker images, set up the necessary environment variables (if not already done), and start all services using Docker Compose.
 
 Generate / Update Documentation
 

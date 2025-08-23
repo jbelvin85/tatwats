@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/en/2.0.0/).
 ## [Unreleased]
 
 ### Added
+- **Documentation:** Updated `GLOSSARY.md` with definitions for React, Node.js, Express, and PostgreSQL.
+- **Documentation:** Updated `README.md` for clarity and accuracy.
 - **Infrastructure:** Created `Dockerfile`s for backend and frontend services.
 - **Infrastructure:** Introduced `docker-compose.yml` for containerized PostgreSQL management.
 - **Scripts:** Created robust cross-platform `setup.sh`/`setup.bat` scripts for initial project configuration and `.env` file generation.

@@ -52,6 +52,18 @@ A tool for defining and running multi-container Docker applications. It uses a Y
 
 A high-performance web server, reverse proxy, and load balancer. It's often used to serve static content, proxy requests to backend servers, and distribute traffic across multiple servers.
 
+### Node.js
+
+A back-end JavaScript runtime environment that allows developers to run JavaScript code on the server-side. It's used for building scalable network applications.
+
+### PostgreSQL
+
+A powerful, open-source object-relational database system with over 30 years of active development that has earned it a strong reputation for reliability, feature robustness, and performance.
+
+### React
+
+A free and open-source front-end JavaScript library for building user interfaces based on components. It is maintained by Meta and a community of individual developers and companies.
+
 ### MTG (Magic: The Gathering)
 
 A collectible card game created by Richard Garfield. It is the world's first trading card game and remains the most popular. PodTracker is designed for MTG Commander players.
